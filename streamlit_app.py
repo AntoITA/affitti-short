@@ -18,6 +18,9 @@ with col2:
 
 totale_investimento_iniziale = prezzo_acquisto + spese_notarili + ristrutturazione + altre_spese
 
+# 📈 Link calcolo mutuo
+st.subheader("🔗 Calcolo mutuo e spese notarili")
+st.markdown("[Clicca qui per calcolare mutuo e spese notarili](https://www.mutuisupermarket.it/calcolo-mutuo/calcolo-spese-acquisto-casa)")
 # 📈 Entrate previste
 st.header("📈 Entrate previste")
 col1, col2, col3 = st.columns(3)
@@ -80,10 +83,6 @@ ax.bar(data['Categoria'], data['Euro'], color=['green', 'red', 'purple', 'blue']
 ax.set_ylabel('€')
 ax.set_title('Confronto entrate, costi e mutuo mensili')
 st.pyplot(fig)
-
-# 📈 Link calcolo mutuo
-st.subheader("🔗 Calcolo mutuo e spese notarili")
-st.markdown("[Clicca qui per calcolare mutuo e spese notarili](https://www.mutuisupermarket.it/calcolo-mutuo/calcolo-spese-acquisto-casa)")
 
 # 💼 Opzione per comparare affitto breve e lungo termine
 st.header("💼 Confronto Affitto Breve vs Lungo Periodo")
