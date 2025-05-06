@@ -36,7 +36,7 @@ st.header("💰 Costi una tantum / investimento iniziale")
 costi_una_tantum = {}
 costi_una_tantum['Arredo e ristrutturazione'] = st.number_input("Arredo e ristrutturazione", min_value=0.0, value=8000.0)
 costi_una_tantum['Spese notarili o di agenzia'] = st.number_input("Spese notarili/agenzia", min_value=0.0, value=3000.0)
-costi_una_tantum['Acquisto (facoltativo)"] = st.number_input("Acquisto immobile (facoltativo)", min_value=0.0, value=0.0)
+costi_una_tantum['Acquisto (facoltativo)'] = st.number_input("Acquisto immobile (facoltativo)", min_value=0.0, value=0.0)
 costi_una_tantum['Altro'] = st.number_input("Altro (arredi, elettrodomestici, ecc.)", min_value=0.0, value=1000.0)
 
 totale_investimento = sum(costi_una_tantum.values())
