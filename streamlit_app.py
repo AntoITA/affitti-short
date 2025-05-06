@@ -1,150 +1,113 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 
-# Impostazioni pagina
-st.set_page_config(page_title="Analisi Redditività Affitto", layout="wide")
-st.title("📊 Dashboard Affitto Breve vs Lungo Periodo - Redditività Immobiliare")
+# Funzione per calcolare il piano di ammortamento
+def calcola_ammortamento(importo_mutuo, tasso, durata):
+    tasso_mensile = tasso / 100 / 12
+    durata_mesi = durata * 12
+    rata = importo_mutuo * tasso_mensile / (1 - (1 + tasso_mensile) ** -durata_mesi)
+    
+    # Calcolo del piano di ammortamento
+    ammortamento = []
+    capitale_residuo = importo_mutuo
+    for mese in range(1, durata_mesi + 1):
+        interesse = capitale_residuo * tasso_mensile
+        capitale = rata - interesse
+        capitale_residuo -= capitale
+        ammortamento.append((mese, rata, interesse, capitale, capitale_residuo))
+    
+    return pd.DataFrame(ammortamento, columns=['Mese', 'Rata', 'Interesse', 'Capitale', 'Capitale Residuo'])
 
-# 🏠 Dati di acquisto e investimento iniziale
-st.header("🏠 Dati di acquisto e investimento iniziale")
-col1, col2 = st.columns(2)
-with col1:
-    prezzo_acquisto = st.number_input("Prezzo di acquisto immobile (€)", min_value=0.0, value=100000.0)
-    spese_notarili = st.number_input("Spese notarili / agenzia (€)", min_value=0.0, value=3000.0)
-with col2:
-    ristrutturazione = st.number_input("Ristrutturazione / Arredo (€)", min_value=0.0, value=8000.0)
-    altre_spese = st.number_input("Altre spese iniziali (€)", min_value=0.0, value=1000.0)
+# Funzione per simulare l'affitto a breve termine
+def calcola_affitto_breve(rent_per_night, occupancy_rate, days_per_month):
+    return rent_per_night * occupancy_rate * days_per_month
 
-totale_investimento_iniziale = prezzo_acquisto + spese_notarili + ristrutturazione + altre_spese
+# Funzione per simulare l'affitto a lungo termine
+def calcola_affitto_lungo(canone_mensile):
+    return canone_mensile * 12  # Stima annuale
 
-# 📈 Link calcolo mutuo
-st.subheader("🔗 Calcolo mutuo e spese notarili")
-st.markdown("[Clicca qui per calcolare mutuo e spese notarili](https://www.mutuisupermarket.it/calcolo-mutuo/calcolo-spese-acquisto-casa)")
-# 📈 Entrate previste
-st.header("📈 Entrate previste")
-col1, col2, col3 = st.columns(3)
-with col1:
-    prezzo_notte = st.number_input("Prezzo medio per notte (€)", min_value=0.0, value=90.0)
-with col2:
-    occupazione = st.slider("Occupazione media (%)", 0, 100, 70)
-with col3:
-    notti_affittabili = st.number_input("Notti affittabili al mese", min_value=0, max_value=31, value=25)
+# Funzione per analisi fiscale
+def calcolo_tasse(guadagni_annuali, aliquota_imposta):
+    return guadagni_annuali * aliquota_imposta / 100
 
-ricavo_lordo_mensile = prezzo_notte * (occupazione / 100) * notti_affittabili
-st.metric("Ricavo lordo stimato mensile", f"€ {ricavo_lordo_mensile:,.2f}")
+# Funzione per calcolo scenario futuro
+def scenario_futuro(valore_iniziale, crescita_percentuale, anni):
+    return valore_iniziale * (1 + crescita_percentuale/100)**anni
 
-# 💸 Costi fissi mensili
-st.header("💸 Costi fissi mensili")
-costi_fissi = {}
-costi_fissi['Condominio'] = st.number_input("Condominio (€)", min_value=0.0, value=100.0)
-costi_fissi['Utenze (luce/gas/internet)'] = st.number_input("Utenze (€)", min_value=0.0, value=120.0)
-costi_fissi['Pulizie'] = st.number_input("Pulizie (€)", min_value=0.0, value=100.0)
-costi_fissi['Commissioni piattaforme'] = st.number_input("Commissioni piattaforme (€)", min_value=0.0, value=80.0)
-costi_fissi['Manutenzione'] = st.number_input("Manutenzione media (€)", min_value=0.0, value=50.0)
-costi_fissi['Tassa soggiorno / gestione'] = st.number_input("Tassa soggiorno / gestione (€)", min_value=0.0, value=30.0)
+# Interfaccia utente con Streamlit
+st.title("Analisi Investimento Immobiliare")
 
-totale_costi_fissi = sum(costi_fissi.values())
+# Sezione per input dell'utente
+st.sidebar.header("Dati Iniziali")
+importo_mutuo = st.sidebar.number_input("Importo del Mutuo (€)", value=100000, min_value=0)
+tasso_mutuo = st.sidebar.number_input("Tasso di Interesse Mutuo (%)", value=3.5, min_value=0.0)
+durata_mutuo = st.sidebar.number_input("Durata Mutuo (Anni)", value=20, min_value=1)
+spese_notarili = st.sidebar.number_input("Spese Notarili (€)", value=5000, min_value=0)
+inserisci_mutuo = st.sidebar.checkbox("Considerare il mutuo nel calcolo?", value=True)
 
-# 💰 Mutuo (opzionale)
-inserisci_mutuo = st.checkbox("Considera Mutuo nei calcoli")
+# Sezione per affitto a breve o lungo termine
+affitto_breve = st.sidebar.checkbox("Affitto Breve")
+canone_mensile = st.sidebar.number_input("Canone Mensile Affitto Lungo (€)", value=1000, min_value=0)
+
+# Parametri per l'affitto breve
+if affitto_breve:
+    rent_per_night = st.sidebar.number_input("Prezzo per notte (€)", value=100, min_value=0)
+    occupancy_rate = st.sidebar.slider("Tasso di Occupazione (%)", min_value=0, max_value=100, value=80)
+    days_per_month = 30  # Numero fisso di giorni per mese
+
+# Calcoli e simulazioni
+# Calcolo del mutuo
 if inserisci_mutuo:
-    st.header("💰 Dati Mutuo")
-    importo_mutuo = st.number_input("Importo del mutuo (€)", min_value=0.0, value=70000.0)
-    durata_mutuo = st.number_input("Durata del mutuo (anni)", min_value=5, max_value=30, value=20)
-    tasso_mutuo = st.number_input("Tasso d'interesse annuale (%)", min_value=0.0, max_value=10.0, value=3.5)
-    rata_mutuo = (importo_mutuo * tasso_mutuo / 100) / 12  # Calcolo semplificato del mutuo (senza ammortamento complesso)
-    st.metric("Rata mensile mutuo", f"€ {rata_mutuo:,.2f}")
-else:
-    rata_mutuo = 0
+    ammortamento_df = calcola_ammortamento(importo_mutuo, tasso_mutuo, durata_mutuo)
+    st.subheader("Piano di Ammortamento del Mutuo")
+    st.dataframe(ammortamento_df)
 
-# Calcoli principali
-profitto_mensile = ricavo_lordo_mensile - totale_costi_fissi - rata_mutuo
-profitto_annuo = profitto_mensile * 12
-roi = (profitto_annuo / totale_investimento_iniziale * 100) if totale_investimento_iniziale > 0 else 0
-payback = (totale_investimento_iniziale / profitto_annuo) if profitto_annuo > 0 else float('inf')
+    # Grafico dell'ammortamento
+    fig_ammortamento, ax_ammortamento = plt.subplots(figsize=(6, 4))
+    ax_ammortamento.plot(ammortamento_df['Mese'], ammortamento_df['Capitale Residuo'], label="Capitale Residuo", color='red')
+    ax_ammortamento.set_title("Ammortamento del Mutuo nel Tempo")
+    ax_ammortamento.set_xlabel("Mese")
+    ax_ammortamento.set_ylabel("€")
+    st.pyplot(fig_ammortamento)
 
-# 📊 Indicatori di redditività
-st.header("📊 Indicatori di redditività")
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("ROI annuo (%)", f"{roi:.2f}%")
-col2.metric("Payback period (anni)", f"{payback:.1f}" if payback != float('inf') else "N/D")
-col3.metric("Cash flow mensile", f"€ {profitto_mensile:,.2f}")
-col4.metric("Cash flow annuo", f"€ {profitto_annuo:,.2f}")
+# Calcoli per l'affitto
+if affitto_breve:
+    ricavi_affitto_breve = calcola_affitto_breve(rent_per_night, occupancy_rate, days_per_month)
+    st.subheader(f"Ricavi Annui Affitto Breve: {ricavi_affitto_breve:.2f} €")
 
-# 📉 Grafico entrate e costi mensili
-st.header("📉 Grafico entrate e costi mensili")
-data = pd.DataFrame({
-    'Categoria': ['Entrate', 'Costi fissi', 'Mutuo', 'Profitto netto'],
-    'Euro': [ricavo_lordo_mensile, totale_costi_fissi, rata_mutuo, profitto_mensile]
-})
-fig, ax = plt.subplots(figsize=(6, 4))
-ax.bar(data['Categoria'], data['Euro'], color=['green', 'red', 'purple', 'blue'])
-ax.set_ylabel('€')
-ax.set_title('Confronto entrate, costi e mutuo mensili')
-st.pyplot(fig)
+# Calcoli per l'affitto lungo termine
+ricavi_affitto_lungo = calcola_affitto_lungo(canone_mensile)
+st.subheader(f"Ricavi Annui Affitto Lungo: {ricavi_affitto_lungo:.2f} €")
 
-# 💼 Opzione per comparare affitto breve e lungo termine
-st.header("💼 Confronto Affitto Breve vs Lungo Periodo")
-affitto_lungo_termine = st.checkbox("Considera Affitto Lungo Periodo", value=False)
+# Calcolo delle tasse sugli affitti
+tasse_affitto_breve = calcolo_tasse(ricavi_affitto_breve, 20)  # esempio aliquota 20%
+tasse_affitto_lungo = calcolo_tasse(ricavi_affitto_lungo, 20)  # esempio aliquota 20%
 
-if affitto_lungo_termine:
-    # Dati per affitto lungo periodo (ad esempio, contratto 12 mesi)
-    canone_mensile_lungo = st.number_input("Canone mensile affitto lungo periodo (€)", min_value=0.0, value=500.0)
-    durata_contratto = st.number_input("Durata del contratto (anni)", min_value=1, value=1)
-    
-    # Calcolo per affitto lungo periodo
-    ricavo_annuo_lungo = canone_mensile_lungo * 12
-    profitto_annuo_lungo = ricavo_annuo_lungo - totale_costi_fissi * 12  # Escludendo costi di piattaforma e pulizie
+st.subheader(f"Tasse Affitto Breve: {tasse_affitto_breve:.2f} €")
+st.subheader(f"Tasse Affitto Lungo: {tasse_affitto_lungo:.2f} €")
 
-    roi_lungo = (profitto_annuo_lungo / totale_investimento_iniziale * 100) if totale_investimento_iniziale > 0 else 0
-    payback_lungo = (totale_investimento_iniziale / profitto_annuo_lungo) if profitto_annuo_lungo > 0 else float('inf')
+# Scenario di crescita a lungo termine per l'affitto
+scenari_lungo_periodo_breve = scenario_futuro(ricavi_affitto_breve, 3, 10)  # 3% di crescita annuale
+scenari_lungo_periodo_lungo = scenario_futuro(ricavi_affitto_lungo, 2, 10)  # 2% di crescita annuale
 
-    # Mostra indicatori lungo periodo
-    st.subheader("Indicatori Affitto Lungo Periodo")
-    col1, col2 = st.columns(2)
-    col1.metric("ROI annuo Affitto Lungo (%)", f"{roi_lungo:.2f}%")
-    col2.metric("Payback Period Affitto Lungo (anni)", f"{payback_lungo:.1f}" if payback_lungo != float('inf') else "N/D")
-    
-    # Grafico comparativo
-    st.header("📊 Grafico comparativo Affitto Breve vs Lungo Periodo")
-    data_comparativa = pd.DataFrame({
-        'Categoria': ['Affitto Breve', 'Affitto Lungo'],
-        'ROI (%)': [roi, roi_lungo],
-        'Payback Period (anni)': [payback, payback_lungo]
-    })
-    
-    fig_comparativo, ax_comparativo = plt.subplots(figsize=(6, 4))
-    data_comparativa.plot(kind='bar', x='Categoria', y=['ROI (%)', 'Payback Period (anni)'], ax=ax_comparativo)
-    ax_comparativo.set_title("Confronto ROI e Payback tra Affitto Breve e Lungo")
-    st.pyplot(fig_comparativo)
+st.subheader(f"Ricavi Affitto Breve a 10 anni: {scenari_lungo_periodo_breve:.2f} €")
+st.subheader(f"Ricavi Affitto Lungo a 10 anni: {scenari_lungo_periodo_lungo:.2f} €")
 
-# ⬇️ Esporta dati
-st.header("⬇️ Esporta dati")
-dati_export = {
-    'Prezzo medio per notte': prezzo_notte,
-    'Occupazione media (%)': occupazione,
-    'Notti affittabili': notti_affittabili,
-    'Ricavo lordo mensile': ricavo_lordo_mensile,
-    'Totale costi fissi': totale_costi_fissi,
-    'Totale investimento iniziale': totale_investimento_iniziale,
-    'Profitto mensile': profitto_mensile,
-    'Profitto annuo': profitto_annuo,
-    'ROI annuo (%)': roi,
-    'Payback (anni)': payback,
-    'Affitto lungo periodo ROI (%)': roi_lungo if affitto_lungo_termine else None,
-    'Affitto lungo periodo Payback (anni)': payback_lungo if affitto_lungo_termine else None
-}
-df_export = pd.DataFrame(dati_export.items(), columns=['Voce', 'Valore'])
-csv = df_export.to_csv(index=False).encode('utf-8')
-st.download_button(
-    label="Scarica dati in CSV",
-    data=csv,
-    file_name='report_affitto.csv',
-    mime='text/csv'
-)
+# Grafico di comparazione tra i due
+fig_comparazione, ax_comparazione = plt.subplots(figsize=(6, 4))
+ax_comparazione.plot([1, 2], [ricavi_affitto_breve, ricavi_affitto_lungo], label="Ricavi Affitto", color='blue')
+ax_comparazione.set_xticks([1, 2])
+ax_comparazione.set_xticklabels(['Affitto Breve', 'Affitto Lungo'])
+ax_comparazione.set_title("Comparazione tra Affitto Breve e Lungo")
+ax_comparazione.set_ylabel("€ Annui")
+st.pyplot(fig_comparazione)
 
-# Footer
-st.markdown("---")
-st.caption("App creata con ❤️ usando Streamlit - Tutti i dati sono simulazioni modificabili")
+# Esportazione in PDF o Excel
+if st.button("Esporta Report"):
+    # Codice per esportare il report in formato PDF o Excel
+    pass  # da implementare secondo necessità
 
+# Link utile per calcolo delle spese notarili
+st.markdown("Per il calcolo delle spese notarili puoi visitare il [calcolatore online](https://www.mutuisupermarket.it/calcolo-mutuo/calcolo-spese-acquisto-casa).")
