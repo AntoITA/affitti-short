@@ -122,37 +122,4 @@ if affitto_lungo_termine:
 
     # Conclusioni finali
     if roi > roi_lungo:
-        st.markdown("💡 **Conclusioni:** L'affitto breve offre un ROI annuo più elevato rispetto all'affitto a lungo termine, ma comporta anche una maggiore volatilità e costi di gestione più alti. La scelta dipende dal profilo di rischio e dall'investimento iniziale.")
-# 💰 Ammortamento mutuo
-import numpy as np
-
-# Calcolare ammortamento mensile
-def calcola_ammortamento(importo_mutuo, tasso, durata):
-    tasso_mensile = tasso / 100 / 12
-    durata_mesi = durata * 12
-    rata = importo_mutuo * tasso_mensile / (1 - (1 + tasso_mensile) ** -durata_mesi)
-    
-    # Calcolo del piano di ammortamento
-    ammortamento = []
-    capitale_residuo = importo_mutuo
-    for mese in range(1, durata_mesi + 1):
-        interesse = capitale_residuo * tasso_mensile
-        capitale = rata - interesse
-        capitale_residuo -= capitale
-        ammortamento.append((mese, rata, interesse, capitale, capitale_residuo))
-    
-    return pd.DataFrame(ammortamento, columns=['Mese', 'Rata', 'Interesse', 'Capitale', 'Capitale Residuo'])
-
-# Mostra piano di ammortamento se il mutuo è selezionato
-if inserisci_mutuo:
-    ammortamento_df = calcola_ammortamento(importo_mutuo, tasso_mutuo, durata_mutuo)
-    st.subheader("Piano di ammortamento del mutuo")
-    st.dataframe(ammortamento_df)
-
-# 📈 Grafico di Ammortamento
-fig_ammortamento, ax_ammortamento = plt.subplots(figsize=(6, 4))
-ax_ammortamento.plot(ammortamento_df['Mese'], ammortamento_df['Capitale Residuo'], label="Capitale Residuo", color='red')
-ax_ammortamento.set_title("Ammortamento del Mutuo nel Tempo")
-ax_ammortamento.set_xlabel("Mese")
-ax_ammortamento.set_ylabel("€")
-st.pyplot(fig_ammortamento)
+        st.markdown("💡 **Conclusioni:** L'affitto breve offre un ROI annuo più elevato rispetto all
