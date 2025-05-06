@@ -120,32 +120,6 @@ if affitto_lungo_termine:
     ax_comparativo.set_title("Confronto ROI e Payback tra Affitto Breve e Lungo")
     st.pyplot(fig_comparativo)
 
-# ⬇️ Esporta dati
-st.header("⬇️ Esporta dati")
-dati_export = {
-    'Prezzo medio per notte': prezzo_notte,
-    'Occupazione media (%)': occupazione,
-    'Notti affittabili': notti_affittabili,
-    'Ricavo lordo mensile': ricavo_lordo_mensile,
-    'Totale costi fissi': totale_costi_fissi,
-    'Totale investimento iniziale': totale_investimento_iniziale,
-    'Profitto mensile': profitto_mensile,
-    'Profitto annuo': profitto_annuo,
-    'ROI annuo (%)': roi,
-    'Payback (anni)': payback,
-    'Affitto lungo periodo ROI (%)': roi_lungo if affitto_lungo_termine else None,
-    'Affitto lungo periodo Payback (anni)': payback_lungo if affitto_lungo_termine else None
-}
-df_export = pd.DataFrame(dati_export.items(), columns=['Voce', 'Valore'])
-csv = df_export.to_csv(index=False).encode('utf-8')
-st.download_button(
-    label="Scarica dati in CSV",
-    data=csv,
-    file_name='report_affitto.csv',
-    mime='text/csv'
-)
-
-# Footer
-st.markdown("---")
-st.caption("App creata con ❤️ usando Streamlit - Tutti i dati sono simulazioni modificabili")
-
+    # Conclusioni finali
+    if roi > roi_lungo:
+        st.markdown("💡 **Conclusioni:** L'affitto breve offre un ROI annuo più elevato rispetto all
