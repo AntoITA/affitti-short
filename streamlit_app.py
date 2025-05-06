@@ -68,6 +68,15 @@ col2.metric("Payback period (anni)", f"{payback:.1f}" if payback != float('inf')
 col3.metric("Cash flow mensile", f"€ {profitto_mensile:,.2f}")
 col4.metric("Cash flow annuo", f"€ {profitto_annuo:,.2f}")
 
+# Valutazione qualitativa della redditività
+if roi >= 8:
+    st.success("🔝 Redditività **Alta** (ROI ≥ 8%)")
+elif roi >= 4:
+    st.warning("⚠️ Redditività **Media** (4% ≤ ROI < 8%)")
+else:
+    st.error("🔻 Redditività **Bassa** (ROI < 4%)")
+
+
 # 📈 Grafico entrate e costi mensili
 st.header("📉 Grafico entrate e costi mensili")
 data = pd.DataFrame({
