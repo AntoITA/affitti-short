@@ -122,7 +122,7 @@ if affitto_lungo_termine:
 
     # Conclusioni finali
     if roi > roi_lungo:
-        st.markdown("💡 **Conclusioni:** L'affitto breve offre un ROI annuo più elevato rispetto all
+        st.markdown("💡 **Conclusioni:** L'affitto breve offre un ROI annuo più elevato rispetto all'affitto a lungo termine, ma comporta anche una maggiore volatilità e costi di gestione più alti. La scelta dipende dal profilo di rischio e dall'investimento iniziale.")
 # 💰 Ammortamento mutuo
 import numpy as np
 
