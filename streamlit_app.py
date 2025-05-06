@@ -1,93 +1,108 @@
 import streamlit as st
-import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
-# Funzione per calcolare il ROI dell'acquisto
-def calcola_roi_acquisto(prezzo_acquisto, canone_annuo, spese_annual, imposte_annual, mutuo, durata_mutuo, tasso_mutuo, rivalutazione_annua=0.02):
-    # Calcolare l'affitto netto (togliendo le spese e le imposte)
-    reddito_netto = canone_annuo - spese_annual - imposte_annual
-    
-    # Se c'è un mutuo, calcoliamo la rata annuale
-    if mutuo > 0:
-        rata_annua = mutuo * (tasso_mutuo / 100) * (1 + tasso_mutuo / 100)**durata_mutuo / ((1 + tasso_mutuo / 100)**durata_mutuo - 1)
-    else:
-        rata_annua = 0
-    
-    # Reddito netto post mutuo
-    reddito_netto_post_mutuo = reddito_netto - rata_annua
-    
-    # Calcolo ROI
-    investimento_totale = prezzo_acquisto + spese_annual + imposte_annual
-    ritorno_annuo = reddito_netto_post_mutuo + (prezzo_acquisto * (1 + rivalutazione_annua) - prezzo_acquisto) / durata_mutuo
-    
-    roi = (ritorno_annuo / investimento_totale) * 100  # ROI in percentuale
-    return roi, reddito_netto_post_mutuo, rata_annua
+# Titolo della pagina
+st.set_page_config(page_title="Analisi Redditività Affitto", layout="wide")
 
-# Funzione per calcolare ROI affitto (breve vs lungo termine)
-def calcola_roi_affitto(prezzo_acquisto, canone_annuo, spese_annual, imposte_annual, mutuo, durata_mutuo, tasso_mutuo, tipo_affitto="lungo", rivalutazione_annua=0.02):
-    if tipo_affitto == "lungo":
-        # Affitto lungo termine: reddito da affitto per 12 mesi
-        reddito_annuo_affitto = canone_annuo - spese_annual - imposte_annual
-    else:
-        # Affitto breve termine (ad esempio, 30 giorni al mese)
-        reddito_annuo_affitto = (canone_annuo * 0.7) - spese_annual - imposte_annual  # Sconto del 30% per turnover e gestione affitto breve
+# 🏠 Dati di acquisto e investimento iniziale
+st.header("🏠 Dati di acquisto e investimento iniziale")
+col1, col2 = st.columns(2)
+with col1:
+    prezzo_acquisto = st.number_input("Prezzo di acquisto immobile (€)", min_value=0.0, value=100000.0)
+    spese_notarili = st.number_input("Spese notarili / agenzia (€)", min_value=0.0, value=3000.0)
+with col2:
+    ristrutturazione = st.number_input("Ristrutturazione / Arredo (€)", min_value=0.0, value=8000.0)
+    altre_spese = st.number_input("Altre spese iniziali (€)", min_value=0.0, value=1000.0)
 
-    # Se c'è un mutuo, calcoliamo la rata annuale
-    if mutuo > 0:
-        rata_annua = mutuo * (tasso_mutuo / 100) * (1 + tasso_mutuo / 100)**durata_mutuo / ((1 + tasso_mutuo / 100)**durata_mutuo - 1)
-    else:
-        rata_annua = 0
+totale_investimento_iniziale = prezzo_acquisto + spese_notarili + ristrutturazione + altre_spese
 
-    # Reddito netto post mutuo
-    reddito_netto_post_mutuo = reddito_annuo_affitto - rata_annua
+# Opzione di mutuo
+mutuo = st.checkbox("Considera mutuo nel calcolo", value=True)
+if mutuo:
+    tasso_mutuo = st.slider("Tasso d'interesse mutuo (%)", 0, 10, 3)
+    durata_mutuo = st.slider("Durata mutuo (anni)", 1, 30, 20)
+    importo_mutuo = st.number_input("Importo mutuo (€)", min_value=0.0, value=prezzo_acquisto)
+    spese_notarili = spese_notarili + 2000  # es. per il mutuo
 
-    # Calcolo ROI per affitto (netto delle spese)
-    investimento_totale = prezzo_acquisto + spese_annual + imposte_annual
-    ritorno_annuo_affitto = reddito_netto_post_mutuo + (prezzo_acquisto * (1 + rivalutazione_annua) - prezzo_acquisto) / durata_mutuo
-    
-    roi_affitto = (ritorno_annuo_affitto / investimento_totale) * 100
-    return roi_affitto, reddito_netto_post_mutuo, rata_annua
+# 📈 Entrate previste
+st.header("📈 Entrate previste")
+col1, col2, col3 = st.columns(3)
+with col1:
+    prezzo_notte = st.number_input("Prezzo medio per notte (€)", min_value=0.0, value=90.0)
+with col2:
+    occupazione = st.slider("Occupazione media (%)", 0, 100, 70)
+with col3:
+    notti_affittabili = st.number_input("Notti affittabili al mese", min_value=0, max_value=31, value=25)
 
-# Interfaccia Streamlit
-st.title("Analisi Investimento Immobiliare a Milano")
+ricavo_lordo_mensile = prezzo_notte * (occupazione / 100) * notti_affittabili
+st.metric("Ricavo lordo stimato mensile", f"€ {ricavo_lordo_mensile:,.2f}")
 
-# Parametri di input
-prezzo_acquisto = st.number_input("Prezzo di acquisto dell'immobile (€):", min_value=50000, max_value=5000000, step=10000, value=300000)
-canone_annuo = st.number_input("Canone di affitto annuale (€):", min_value=0, step=100, value=12000)
-spese_annual = st.number_input("Spese annuali di gestione (assicurazione, manutenzione, ecc.): (€)", min_value=0, step=100, value=2000)
-imposte_annual = st.number_input("Imposte annuali (cedolare secca, IMU, ecc.): (€)", min_value=0, step=100, value=1500)
-mutuo = st.number_input("Importo mutuo (€):", min_value=0, max_value=prezzo_acquisto, step=10000, value=200000)
-durata_mutuo = st.number_input("Durata del mutuo (anni):", min_value=5, max_value=30, step=1, value=20)
-tasso_mutuo = st.number_input("Tasso di interesse mutuo (%):", min_value=0.1, max_value=10.0, step=0.1, value=3.0)
-rivalutazione_annua = st.number_input("Rivalutazione annua dell'immobile (%):", min_value=0.0, max_value=10.0, step=0.1, value=2.0)
+# 💸 Costi fissi mensili
+st.header("💸 Costi fissi mensili")
+costi_fissi = {}
+costi_fissi['Condominio'] = st.number_input("Condominio", min_value=0.0, value=100.0)
+costi_fissi['Utenze (luce/gas/internet)'] = st.number_input("Utenze", min_value=0.0, value=120.0)
+costi_fissi['Pulizie'] = st.number_input("Pulizie", min_value=0.0, value=100.0)
+costi_fissi['Commissioni piattaforme'] = st.number_input("Commissioni piattaforme", min_value=0.0, value=80.0)
+costi_fissi['Manutenzione'] = st.number_input("Manutenzione media", min_value=0.0, value=50.0)
+costi_fissi['Tassa soggiorno / gestione'] = st.number_input("Tassa soggiorno / gestione", min_value=0.0, value=30.0)
 
-# Tipo di affitto
-tipo_affitto = st.selectbox("Tipo di affitto:", ("Lungo", "Breve"))
+totale_costi_fissi = sum(costi_fissi.values())
 
-# Calcolo ROI per acquisto e affitto
-roi_acquisto, reddito_netto_post_mutuo_acquisto, rata_annua_acquisto = calcola_roi_acquisto(prezzo_acquisto, canone_annuo, spese_annual, imposte_annual, mutuo, durata_mutuo, tasso_mutuo, rivalutazione_annua)
-roi_affitto, reddito_netto_post_mutuo_affitto, rata_annua_affitto = calcola_roi_affitto(prezzo_acquisto, canone_annuo, spese_annual, imposte_annual, mutuo, durata_mutuo, tasso_mutuo, tipo_affitto.lower(), rivalutazione_annua)
+# Calcolo tasse
+def calcolo_tasse(ricavi, aliquota):
+    return ricavi * (aliquota / 100)
 
-# Visualizzazione dei risultati
-st.subheader("Risultati ROI e Dettagli:")
-st.write(f"**ROI per Acquisto Immobiliare**: {roi_acquisto:.2f}% annuo")
-st.write(f"**ROI per Affitto ({tipo_affitto} Termine)**: {roi_affitto:.2f}% annuo")
+# Calcolo del profitto
+profitto_mensile = ricavo_lordo_mensile - totale_costi_fissi
+profitto_annuo = profitto_mensile * 12
+roi = (profitto_annuo / totale_investimento_iniziale * 100) if totale_investimento_iniziale > 0 else 0
+payback = (totale_investimento_iniziale / profitto_annuo) if profitto_annuo > 0 else float('inf')
 
-# Confronto tra ROI Acquisto vs Affitto
-if roi_acquisto > roi_affitto:
-    st.write("L'acquisto dell'immobile è più vantaggioso rispetto all'affitto.")
-else:
-    st.write("L'affitto risulta più vantaggioso rispetto all'acquisto dell'immobile.")
+# 📊 Indicatori di redditività
+st.header("📊 Indicatori di redditività")
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("ROI annuo (%)", f"{roi:.2f}%")
+col2.metric("Payback period (anni)", f"{payback:.1f}" if payback != float('inf') else "N/D")
+col3.metric("Cash flow mensile", f"€ {profitto_mensile:,.2f}")
+col4.metric("Cash flow annuo", f"€ {profitto_annuo:,.2f}")
 
-# Dettaglio della rata annuale del mutuo
-if mutuo > 0:
-    st.write(f"**Rata annuale mutuo (Acquisto)**: {rata_annua_acquisto:.2f} €")
-    st.write(f"**Rata annuale mutuo (Affitto)**: {rata_annua_affitto:.2f} €")
+# 📈 Grafico entrate e costi mensili
+st.header("📉 Grafico entrate e costi mensili")
+data = pd.DataFrame({
+    'Categoria': ['Entrate', 'Costi fissi', 'Profitto netto'],
+    'Euro': [ricavo_lordo_mensile, totale_costi_fissi, profitto_mensile]
+})
+fig, ax = plt.subplots()
+ax.bar(data['Categoria'], data['Euro'], color=['green', 'red', 'blue'])
+ax.set_ylabel('€')
+ax.set_title('Confronto mensile')
+st.pyplot(fig)
 
-# Dettaglio delle spese di gestione e imposte
-st.write(f"**Spese annuali di gestione**: {spese_annual:.2f} €")
-st.write(f"**Imposte annuali**: {imposte_annual:.2f} €")
+# Esporta dati
+st.header("⬇️ Esporta dati")
+dati_export = {
+    'Prezzo medio per notte': prezzo_notte,
+    'Occupazione media (%)': occupazione,
+    'Notti affittabili': notti_affittabili,
+    'Ricavo lordo mensile': ricavo_lordo_mensile,
+    'Totale costi fissi': totale_costi_fissi,
+    'Totale investimento iniziale': totale_investimento_iniziale,
+    'Profitto mensile': profitto_mensile,
+    'Profitto annuo': profitto_annuo,
+    'ROI annuo (%)': roi,
+    'Payback (anni)': payback
+}
+df_export = pd.DataFrame(dati_export.items(), columns=['Voce', 'Valore'])
+csv = df_export.to_csv(index=False).encode('utf-8')
+st.download_button(
+    label="Scarica dati in CSV",
+    data=csv,
+    file_name='report_affitto.csv',
+    mime='text/csv'
+)
 
-# Dettaglio del reddito netto post mutuo
-st.write(f"**Reddito netto post mutuo (Acquisto)**: {reddito_netto_post_mutuo_acquisto:.2f} €")
-st.write(f"**Reddito netto post mutuo (Affitto {tipo_affitto} Termine)**: {reddito_netto_post_mutuo_affitto:.2f} €")
+# Footer
+st.markdown("---")
+st.caption("App creata con ❤️ usando Streamlit - Tutti i dati sono simulazioni modificabili")
