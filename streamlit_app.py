@@ -1,145 +1,134 @@
-import streamlit as st
-import pandas as pd
+import tkinter as tk
+from tkinter import messagebox
+import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-st.set_page_config(page_title="Analisi Redditività Affitto", layout="wide")
+# Funzione per calcolare ROI
+def calcola_roi(entrate_annue, prezzo_acquisto, spese_iniziali, anni):
+    investimento_totale = prezzo_acquisto + spese_iniziali
+    ritorno_totale = entrate_annue * anni + valore_finale - investimento_totale
+    return ritorno_totale / investimento_totale * 100  # ROI in %
 
-st.title("📊 Dashboard Affitto Breve - Redditività Immobiliare")
+# Funzione per il calcolo delle entrate e del ROI
+def calcola():
+    try:
+        # Recupero dei dati inseriti
+        prezzo_acquisto = float(entry_acquisto.get())
+        spese_iniziali = float(entry_spese.get())
+        costi_operativi_mensili = float(entry_costi.get())
+        occupazione_media_breve_termine = float(entry_occupazione.get())
+        tariffa_per_notte = float(entry_tariffa.get())
+        affitto_mensile_lungo_termine = float(entry_affitto.get())
+        anni = int(entry_anni.get())
+        tasso_apprezzamento = float(entry_apprezzamento.get()) / 100
+        inflazione = float(entry_inflazione.get()) / 100
+        
+        # Calcolo per affitto breve termine
+        occupazione_annua_breve = occupazione_media_breve_termine * 365  # giorni di occupazione annua
+        entrate_annue_breve = occupazione_annua_breve * tariffa_per_notte  # entrate annue da affitto breve
+        entrate_annue_breve -= costi_operativi_mensili * 12  # Sottrai i costi operativi annuali
 
-# Sidebar per i dati di investimento iniziale e parametri fiscali
-st.sidebar.header("🏠 Dati di acquisto e investimento iniziale")
-col1, col2 = st.sidebar.columns(2)
-with col1:
-    prezzo_acquisto = st.number_input("Prezzo di acquisto immobile (€)", min_value=0.0, value=100000.0)
-    spese_notarili = st.number_input("Spese notarili / agenzia (€)", min_value=0.0, value=3000.0)
-with col2:
-    ristrutturazione = st.number_input("Ristrutturazione / Arredo (€)", min_value=0.0, value=8000.0)
-    altre_spese = st.number_input("Altre spese iniziali (€)", min_value=0.0, value=1000.0)
+        # Calcolo per affitto lungo termine
+        entrate_annue_lungo = affitto_mensile_lungo_termine * 12  # entrate annue da affitto lungo termine
+        entrate_annue_lungo -= costi_operativi_mensili * 12  # Sottrai i costi operativi annuali
 
-totale_investimento_iniziale = prezzo_acquisto + spese_notarili + ristrutturazione + altre_spese
+        # Calcolo dell'apprezzamento dell'immobile
+        valore_finale_breve = prezzo_acquisto * ((1 + tasso_apprezzamento) ** anni)
+        valore_finale_lungo = prezzo_acquisto * ((1 + tasso_apprezzamento) ** anni)
 
-# 📈 Entrate previste
-st.header("📈 Entrate previste")
-col1, col2, col3 = st.columns(3)
-with col1:
-    prezzo_notte = st.number_input("Prezzo medio per notte (€)", min_value=0.0, value=90.0)
-with col2:
-    occupazione = st.slider("Occupazione media (%)", 0, 100, 70)
-with col3:
-    notti_affittabili = st.number_input("Notti affittabili al mese", min_value=0, max_value=31, value=25)
+        # Calcolo del ROI per entrambi gli scenari
+        roi_breve = calcola_roi(entrate_annue_breve, prezzo_acquisto, spese_iniziali, anni)
+        roi_lungo = calcola_roi(entrate_annue_lungo, prezzo_acquisto, spese_iniziali, anni)
+        
+        # Visualizzazione dei risultati nel testo
+        risultato_1.config(text=f"ROI Affitto Breve Termine: {roi_breve:.2f}%")
+        risultato_2.config(text=f"ROI Affitto Lungo Termine: {roi_lungo:.2f}%")
 
-ricavo_lordo_mensile = prezzo_notte * (occupazione/100) * notti_affittabili
-st.metric("Ricavo lordo stimato mensile", f"€ {ricavo_lordo_mensile:,.2f}")
+        # Grafico
+        anni_array = np.arange(1, anni + 1)
+        entrate_breve_array = [entrate_annue_breve * anno for anno in anni_array]
+        entrate_lungo_array = [entrate_annue_lungo * anno for anno in anni_array]
 
-# 💸 Costi fissi mensili
-st.header("💸 Costi fissi mensili")
-costi_fissi = {}
-costi_fissi['Condominio'] = st.number_input("Condominio", min_value=0.0, value=100.0)
-costi_fissi['Utenze (luce/gas/internet)'] = st.number_input("Utenze", min_value=0.0, value=120.0)
-costi_fissi['Pulizie'] = st.number_input("Pulizie", min_value=0.0, value=100.0)
-costi_fissi['Commissioni piattaforme'] = st.number_input("Commissioni piattaforme", min_value=0.0, value=80.0)
-costi_fissi['Manutenzione'] = st.number_input("Manutenzione media", min_value=0.0, value=50.0)
-costi_fissi['Tassa soggiorno / gestione'] = st.number_input("Tassa soggiorno / gestione", min_value=0.0, value=30.0)
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.plot(anni_array, entrate_breve_array, label="Affitto Breve Termine", color='blue')
+        ax.plot(anni_array, entrate_lungo_array, label="Affitto Lungo Termine", color='green')
+        ax.set_xlabel("Anni")
+        ax.set_ylabel("Entrate cumulative (€)")
+        ax.set_title("Comparazione tra Affitto Breve e Lungo Termine")
+        ax.legend()
+        ax.grid(True)
 
-totale_costi_fissi = sum(costi_fissi.values())
+        # Aggiunta del grafico alla GUI
+        canvas = FigureCanvasTkAgg(fig, master=frame_grafico)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-# Aliquota fiscale
-aliquota_fiscale = st.number_input("Aliquota fiscale (%)", min_value=0.0, max_value=100.0, value=21.0)
+    except ValueError:
+        messagebox.showerror("Errore", "Per favore, inserisci solo valori numerici validi!")
 
-# Calcoli
-profitto_mensile = ricavo_lordo_mensile - totale_costi_fissi
-profitto_annuo = profitto_mensile * 12
-profitto_annuo_netto = profitto_annuo * (1 - aliquota_fiscale / 100)
-roi = (profitto_annuo / totale_investimento_iniziale * 100) if totale_investimento_iniziale > 0 else 0
-roi_netto = (profitto_annuo_netto / totale_investimento_iniziale * 100) if totale_investimento_iniziale > 0 else 0
-payback = (totale_investimento_iniziale / profitto_annuo) if profitto_annuo > 0 else float('inf')
-payback_netto = (totale_investimento_iniziale / profitto_annuo_netto) if profitto_annuo_netto > 0 else float('inf')
+# Creazione della finestra principale
+root = tk.Tk()
+root.title("Comparazione Affitto Breve e Lungo Termine")
+root.geometry("800x600")
 
-# 📊 Indicatori di redditività
-st.header("📊 Indicatori di redditività")
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("ROI annuo (%)", f"{roi:.2f}%")
-col2.metric("ROI annuo netto (%)", f"{roi_netto:.2f}%")
-col3.metric("Payback period (anni)", f"{payback:.1f}" if payback != float('inf') else "N/D")
-col4.metric("Payback period netto (anni)", f"{payback_netto:.1f}" if payback_netto != float('inf') else "N/D")
-col1.metric("Cash flow mensile", f"€ {profitto_mensile:,.2f}")
-col2.metric("Cash flow annuo", f"€ {profitto_annuo:,.2f}")
-col3.metric("Cash flow annuo netto", f"€ {profitto_annuo_netto:,.2f}")
+# Frame per i parametri di input
+frame_input = tk.Frame(root)
+frame_input.pack(padx=10, pady=10, fill=tk.X)
 
-# 💼 Valutazione finale con semaforo
-if roi_netto > 8:
-    st.success("🔝 Ottima redditività netta")
-elif roi_netto > 4:
-    st.warning("⚠️ Redditività discreta")
-else:
-    st.error("🔻 Redditività bassa")
+tk.Label(frame_input, text="Prezzo di acquisto (€):").grid(row=0, column=0, sticky="e", padx=5, pady=5)
+entry_acquisto = tk.Entry(frame_input)
+entry_acquisto.grid(row=0, column=1, padx=5, pady=5)
 
-# 📈 Grafico cumulativo
-st.header("📉 Grafico entrate e costi mensili")
-data = pd.DataFrame({
-    'Categoria': ['Entrate', 'Costi fissi', 'Profitto netto'],
-    'Euro': [ricavo_lordo_mensile, totale_costi_fissi, profitto_mensile]
-})
-fig, ax = plt.subplots()
-ax.bar(data['Categoria'], data['Euro'], color=['green', 'red', 'blue'])
-ax.set_ylabel('€')
-ax.set_title('Confronto mensile')
-st.pyplot(fig)
+tk.Label(frame_input, text="Spese iniziali (€):").grid(row=1, column=0, sticky="e", padx=5, pady=5)
+entry_spese = tk.Entry(frame_input)
+entry_spese.grid(row=1, column=1, padx=5, pady=5)
 
-# Grafico cumulativo
-st.header("📊 Grafico del recupero del capitale e cash flow annuo")
-anni = 10
-cashflow_annuo = [profitto_annuo_netto] * anni
-recupero = [sum(cashflow_annuo[:i+1]) for i in range(anni)]
-df_cum = pd.DataFrame({
-    'Anno': list(range(1, anni+1)),
-    'Cash flow annuo netto': cashflow_annuo,
-    'Capitale recuperato': recupero
-})
-st.line_chart(df_cum.set_index("Anno"))
+tk.Label(frame_input, text="Costi operativi mensili (€):").grid(row=2, column=0, sticky="e", padx=5, pady=5)
+entry_costi = tk.Entry(frame_input)
+entry_costi.grid(row=2, column=1, padx=5, pady=5)
 
-# 📈 Affitto lungo termine - Confronto
-st.header("🏠 Confronto con Affitto Lungo Periodo")
-canone_mensile = st.number_input("Canone affitto mensile (€)", min_value=0.0, value=700.0)
-spese_condominiali = st.number_input("Spese condominiali / manutenzione (€)", min_value=0.0, value=100.0)
-guadagno_affitto = canone_mensile * 12
-guadagno_affitto_netto = guadagno_affitto - (spese_condominiali * 12)
+tk.Label(frame_input, text="Occupazione media (0-1) per affitto breve:").grid(row=3, column=0, sticky="e", padx=5, pady=5)
+entry_occupazione = tk.Entry(frame_input)
+entry_occupazione.grid(row=3, column=1, padx=5, pady=5)
 
-# 📊 Confronto finale
-st.metric("Guadagno annuo da affitto lungo periodo", f"€ {guadagno_affitto:,.2f}")
-st.metric("Guadagno annuo netto da affitto lungo periodo", f"€ {guadagno_affitto_netto:,.2f}")
+tk.Label(frame_input, text="Tariffa per notte (€):").grid(row=4, column=0, sticky="e", padx=5, pady=5)
+entry_tariffa = tk.Entry(frame_input)
+entry_tariffa.grid(row=4, column=1, padx=5, pady=5)
 
-# ⬇️ Esporta dati
-st.header("⬇️ Esporta dati")
-dati_export = {
-    'Prezzo medio per notte': prezzo_notte,
-    'Occupazione media (%)': occupazione,
-    'Notti affittabili': notti_affittabili,
-    'Ricavo lordo mensile': ricavo_lordo_mensile,
-    'Totale costi fissi': totale_costi_fissi,
-    'Totale investimento iniziale': totale_investimento_iniziale,
-    'Profitto mensile': profitto_mensile,
-    'Profitto annuo': profitto_annuo,
-    'Profitto annuo netto': profitto_annuo_netto,
-    'ROI annuo (%)': roi,
-    'ROI annuo netto (%)': roi_netto,
-    'Payback (anni)': payback,
-    'Payback netto (anni)': payback_netto,
-    'Cash flow mensile': profitto_mensile,
-    'Cash flow annuo': profitto_annuo,
-    'Cash flow annuo netto': profitto_annuo_netto,
-    'Guadagno annuo da affitto lungo periodo': guadagno_affitto,
-    'Guadagno annuo netto da affitto lungo periodo': guadagno_affitto_netto
-}
-df_export = pd.DataFrame(dati_export.items(), columns=['Voce', 'Valore'])
-csv = df_export.to_csv(index=False).encode('utf-8')
-st.download_button(
-    label="Scarica dati in CSV",
-    data=csv,
-    file_name='report_affitto.csv',
-    mime='text/csv'
-)
+tk.Label(frame_input, text="Affitto mensile lungo termine (€):").grid(row=5, column=0, sticky="e", padx=5, pady=5)
+entry_affitto = tk.Entry(frame_input)
+entry_affitto.grid(row=5, column=1, padx=5, pady=5)
 
-# Footer
-st.markdown("---")
-st.caption("App creata con ❤️ usando Streamlit - Tutti i dati sono simulazioni modificabili")
+tk.Label(frame_input, text="Numero di anni:").grid(row=6, column=0, sticky="e", padx=5, pady=5)
+entry_anni = tk.Entry(frame_input)
+entry_anni.grid(row=6, column=1, padx=5, pady=5)
+
+tk.Label(frame_input, text="Tasso di apprezzamento (%):").grid(row=7, column=0, sticky="e", padx=5, pady=5)
+entry_apprezzamento = tk.Entry(frame_input)
+entry_apprezzamento.grid(row=7, column=1, padx=5, pady=5)
+
+tk.Label(frame_input, text="Tasso di inflazione (%):").grid(row=8, column=0, sticky="e", padx=5, pady=5)
+entry_inflazione = tk.Entry(frame_input)
+entry_inflazione.grid(row=8, column=1, padx=5, pady=5)
+
+# Pulsante per calcolare
+button_calcola = tk.Button(root, text="Calcola", command=calcola)
+button_calcola.pack(pady=20)
+
+# Risultati
+frame_risultati = tk.Frame(root)
+frame_risultati.pack(pady=10)
+
+risultato_1 = tk.Label(frame_risultati, text="ROI Affitto Breve Termine: -")
+risultato_1.pack()
+
+risultato_2 = tk.Label(frame_risultati, text="ROI Affitto Lungo Termine: -")
+risultato_2.pack()
+
+# Frame per il grafico
+frame_grafico = tk.Frame(root)
+frame_grafico.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+# Avvio della GUI
+root.mainloop()
