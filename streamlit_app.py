@@ -122,4 +122,4 @@ if affitto_lungo_termine:
 
     # Conclusioni finali
     if roi > roi_lungo:
-        st.markdown("💡 **Conclusioni:** L'affitto breve offre un ROI annuo più elevato rispetto all
+        st.markdown("💡 **Conclusioni:** L'affitto breve offre un ROI annuo più elevato rispetto all" )
