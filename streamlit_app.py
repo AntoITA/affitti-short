@@ -6,6 +6,18 @@ st.set_page_config(page_title="Analisi Redditività Affitto", layout="wide")
 
 st.title("📊 Dashboard Affitto Breve - Redditività Immobiliare")
 
+# 🏠 Dati iniziali investimento immobiliare
+st.header("🏠 Dati di acquisto e investimento iniziale")
+col1, col2 = st.columns(2)
+with col1:
+    prezzo_acquisto = st.number_input("Prezzo di acquisto immobile (€)", min_value=0.0, value=100000.0)
+    spese_notarili = st.number_input("Spese notarili / agenzia (€)", min_value=0.0, value=3000.0)
+with col2:
+    ristrutturazione = st.number_input("Ristrutturazione / Arredo (€)", min_value=0.0, value=8000.0)
+    altre_spese = st.number_input("Altre spese iniziali (€)", min_value=0.0, value=1000.0)
+
+totale_investimento_iniziale = prezzo_acquisto + spese_notarili + ristrutturazione + altre_spese
+
 # 📈 Entrate previste
 st.header("📈 Entrate previste")
 col1, col2, col3 = st.columns(3)
@@ -31,21 +43,11 @@ costi_fissi['Tassa soggiorno / gestione'] = st.number_input("Tassa soggiorno / g
 
 totale_costi_fissi = sum(costi_fissi.values())
 
-# 💰 Costi una tantum
-st.header("💰 Costi una tantum / investimento iniziale")
-costi_una_tantum = {}
-costi_una_tantum['Arredo e ristrutturazione'] = st.number_input("Arredo e ristrutturazione", min_value=0.0, value=8000.0)
-costi_una_tantum['Spese notarili o di agenzia'] = st.number_input("Spese notarili/agenzia", min_value=0.0, value=3000.0)
-costi_una_tantum['Acquisto (facoltativo)'] = st.number_input("Acquisto immobile (facoltativo)", min_value=0.0, value=0.0)
-costi_una_tantum['Altro'] = st.number_input("Altro (arredi, elettrodomestici, ecc.)", min_value=0.0, value=1000.0)
-
-totale_investimento = sum(costi_una_tantum.values())
-
 # Calcoli
 profitto_mensile = ricavo_lordo_mensile - totale_costi_fissi
 profitto_annuo = profitto_mensile * 12
-roi = (profitto_annuo / totale_investimento * 100) if totale_investimento > 0 else 0
-payback = (totale_investimento / profitto_annuo) if profitto_annuo > 0 else float('inf')
+roi = (profitto_annuo / totale_investimento_iniziale * 100) if totale_investimento_iniziale > 0 else 0
+payback = (totale_investimento_iniziale / profitto_annuo) if profitto_annuo > 0 else float('inf')
 
 # 📊 Indicatori di redditività
 st.header("📊 Indicatori di redditività")
@@ -66,6 +68,29 @@ ax.bar(data['Categoria'], data['Euro'], color=['green', 'red', 'blue'])
 ax.set_ylabel('€')
 ax.set_title('Confronto mensile')
 st.pyplot(fig)
+
+# ⬇️ Esporta dati
+st.header("⬇️ Esporta dati")
+dati_export = {
+    'Prezzo medio per notte': prezzo_notte,
+    'Occupazione media (%)': occupazione,
+    'Notti affittabili': notti_affittabili,
+    'Ricavo lordo mensile': ricavo_lordo_mensile,
+    'Totale costi fissi': totale_costi_fissi,
+    'Totale investimento iniziale': totale_investimento_iniziale,
+    'Profitto mensile': profitto_mensile,
+    'Profitto annuo': profitto_annuo,
+    'ROI annuo (%)': roi,
+    'Payback (anni)': payback
+}
+df_export = pd.DataFrame(dati_export.items(), columns=['Voce', 'Valore'])
+csv = df_export.to_csv(index=False).encode('utf-8')
+st.download_button(
+    label="Scarica dati in CSV",
+    data=csv,
+    file_name='report_affitto.csv',
+    mime='text/csv'
+)
 
 # Footer
 st.markdown("---")
