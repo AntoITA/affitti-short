@@ -1,98 +1,115 @@
 import streamlit as st
+import matplotlib.pyplot as plt
+import numpy as np
 
-# Funzione per calcolare la redditività dell'investimento
-def calcola_redditivita(acquisto, ristrutturazione, affitto_mensile, utenze, pulizie_per_check, manutenzione, assicurazione, marketing_continuo, servizio_gestione, tasso_occupazione, prezzo_notte, commissione_piattaforma, anni):
-    # Costi iniziali
-    investimento_iniziale = acquisto + ristrutturazione + 2000 + 1500  # Licenze e marketing iniziali
-    costi_fissi_annuali = (affitto_mensile * 12) + (utenze * 12) + (manutenzione * 12) + (assicurazione * 12) + (marketing_continuo * 12) + (servizio_gestione * 12)
-    
-    # Dati per ogni anno
-    ricavi_netti = []
-    costi_operativi = []
-    flusso_cassa = []
+# Funzione per calcolare l'utile netto per ogni anno
+def calcola_utile_annuale(prezzo_acquisto, costi_ristrutturazione, licenze_permessi, marketing_iniziale,
+                          tasso_occupazione, prezzo_media_night_alta, prezzo_media_night_bassa,
+                          costi_operativi, commissioni_piattaforme, utenze, pulizie, manutenzione,
+                          tassa_soggiorno, costi_iniziali, arredo_ristrutturazione, spese_notarili):
+    # Calcoliamo il numero di notti occupate
+    notti_occupate = 365 * tasso_occupazione / 100
 
-    for anno in range(1, anni+1):
-        # Calcolo ricavi e commissioni per anno
-        notti_occupate = 365 * tasso_occupazione[anno-1]
-        ricavi_lordi_annuali = notti_occupate * prezzo_notte
-        commissione_annuale = ricavi_lordi_annuali * commissione_piattaforma
-        ricavi_netto = ricavi_lordi_annuali - commissione_annuale
-        
-        # Costi pulizie per anno
-        numero_prenotazioni = notti_occupate / 3  # Durata media del soggiorno 3 notti
-        costo_pulizie_annuale = numero_prenotazioni * pulizie_per_check
-        
-        # Costi operativi totali
-        costi_totali_annuali = costi_fissi_annuali + costo_pulizie_annuale
-        
-        # Calcolo utile operativo
-        utile_operativo = ricavi_netto - costi_totali_annuali
-        
-        # Flusso di cassa
-        if anno == 1:
-            flusso_cassa_annuale = utile_operativo - investimento_iniziale
-        else:
-            flusso_cassa_annuale = utile_operativo
-        
-        # Aggiorniamo i risultati
-        ricavi_netti.append(ricavi_netto)
-        costi_operativi.append(costi_totali_annuali)
-        flusso_cassa.append(flusso_cassa_annuale)
-        
-        # Aggiornamento per l'anno successivo
-        tasso_occupazione[anno] += 0.05  # Incremento del 5% sul tasso di occupazione per ogni anno
-        
-    return ricavi_netti, costi_operativi, flusso_cassa, investimento_iniziale
+    # Prezzo medio per notte considerando la media tra alta e bassa stagione
+    prezzo_media_night = (prezzo_media_night_alta + prezzo_media_night_bassa) / 2
 
+    # Ricavi lordi
+    ricavi_lordi = notti_occupate * prezzo_media_night
 
-# Streamlit UI
-st.title("Valutazione Acquisto Immobile per Affitti Brevi a Milano")
+    # Commissioni piattaforma
+    commissioni = ricavi_lordi * (commissioni_piattaforme / 100)
 
-# Parametri di input
-acquisto = st.number_input("Prezzo di Acquisto dell'Immobili (€):", min_value=50000, max_value=1000000, value=250000)
-ristrutturazione = st.number_input("Ristrutturazione e Arredamento (€):", min_value=0, max_value=100000, value=20000)
-affitto_mensile = st.number_input("Canone di Affitto Mensile (€):", min_value=500, max_value=5000, value=1200)
-utenze = st.number_input("Utenze Mensili (€):", min_value=50, max_value=1000, value=250)
-pulizie_per_check = st.number_input("Costo Pulizie per Check-out (€):", min_value=10, max_value=100, value=30)
-manutenzione = st.number_input("Manutenzione Ordinaria Mensile (€):", min_value=0, max_value=1000, value=100)
-assicurazione = st.number_input("Assicurazione Mensile (€):", min_value=0, max_value=500, value=50)
-marketing_continuo = st.number_input("Marketing Continuo Mensile (€):", min_value=0, max_value=1000, value=100)
-servizio_gestione = st.number_input("Servizio di Gestione Mensile (€):", min_value=0, max_value=1000, value=200)
+    # Ricavi netti
+    ricavi_netti = ricavi_lordi - commissioni
 
-# Assunzioni di occupazione e prezzo per notte
-tasso_occupazione = [0.5, 0.6, 0.65, 0.7, 0.75]  # Tasso di occupazione per ogni anno
-prezzo_notte = st.number_input("Prezzo Medio per Notte (€):", min_value=50, max_value=500, value=125)
-commissione_piattaforma = 0.15  # Commissione media piattaforme
+    # Costi fissi mensili
+    costi_fissi_mensili = utenze + pulizie + manutenzione + tassa_soggiorno + costi_operativi
 
-# Calcolare la redditività
-ricavi_netti, costi_operativi, flusso_cassa, investimento_iniziale = calcola_redditivita(
-    acquisto, ristrutturazione, affitto_mensile, utenze, pulizie_per_check, manutenzione, assicurazione,
-    marketing_continuo, servizio_gestione, tasso_occupazione, prezzo_notte, commissione_piattaforma, 5
+    # Costi annuali
+    costi_annuali = costi_fissi_mensili * 12
+
+    # Calcoliamo il cash flow mensile e annuo
+    cash_flow_annuo = ricavi_netti - costi_annuali
+
+    # Rendimento netto annuale (ROI)
+    investimento_totale = prezzo_acquisto + arredo_ristrutturazione + spese_notarili
+    rendimento_netto = (cash_flow_annuo / investimento_totale) * 100
+
+    # Payback period
+    payback_period = investimento_totale / cash_flow_annuo
+
+    # IRR semplificato (approssimazione)
+    irr = (cash_flow_annuo / investimento_totale) * 100
+
+    return ricavi_lordi, commissioni, ricavi_netti, costi_annuali, cash_flow_annuo, rendimento_netto, payback_period, irr
+
+# Interfaccia utente per Streamlit
+st.title("Calcolatore di Investimento Immobiliare per Affitti Brevi")
+
+# Input variabili
+prezzo_acquisto = st.number_input("Prezzo di Acquisto (€)", min_value=10000, value=200000)
+costi_ristrutturazione = st.number_input("Costi di Ristrutturazione (€)", min_value=0, value=15000)
+licenze_permessi = st.number_input("Costi Licenze e Permessi (€)", min_value=0, value=5000)
+marketing_iniziale = st.number_input("Costi di Marketing Iniziale (€)", min_value=0, value=3000)
+
+# Dati di affitto
+tasso_occupazione = st.slider("Tasso di Occupazione (%)", 0, 100, 50)
+prezzo_media_night_alta = st.number_input("Prezzo per Notte (Alta Stagione) (€)", min_value=10, value=100)
+prezzo_media_night_bassa = st.number_input("Prezzo per Notte (Bassa Stagione) (€)", min_value=10, value=70)
+
+# Costi mensili
+utenze = st.number_input("Utenze (Luce/Gas/Internet) (€)", min_value=0, value=150)
+pulizie = st.number_input("Costi di Pulizia Mensili (€)", min_value=0, value=100)
+manutenzione = st.number_input("Manutenzione Media Mensile (€)", min_value=0, value=50)
+tassa_soggiorno = st.number_input("Tassa Soggiorno/Gestione Amministrativa (€)", min_value=0, value=30)
+costi_operativi = st.number_input("Altri Costi Operativi Mensili (€)", min_value=0, value=100)
+
+# Costi una tantum
+arredo_ristrutturazione = st.number_input("Costi di Arredo/Ristrutturazione (€)", min_value=0, value=10000)
+spese_notarili = st.number_input("Spese Notarili/di Agenzia (€)", min_value=0, value=1500)
+
+# Commissioni piattaforme
+commissioni_piattaforme = st.slider("Commissioni Piattaforme (%)", 0, 30, 15)
+
+# Calcolo dei risultati
+ricavi_lordi, commissioni, ricavi_netti, costi_annuali, cash_flow_annuo, rendimento_netto, payback_period, irr = calcola_utile_annuale(
+    prezzo_acquisto, costi_ristrutturazione, licenze_permessi, marketing_iniziale,
+    tasso_occupazione, prezzo_media_night_alta, prezzo_media_night_bassa,
+    costi_operativi, commissioni_piattaforme, utenze, pulizie, manutenzione,
+    tassa_soggiorno, arredo_ristrutturazione, spese_notarili
 )
 
-# Visualizzare i risultati
-st.subheader("Risultati Anno per Anno")
+# Visualizzazione dei risultati
+st.subheader("Risultati Finanziari")
+st.write(f"**Ricavi Lordi Annuali:** €{ricavi_lordi:,.2f}")
+st.write(f"**Commissioni Piattaforme:** €{commissioni:,.2f}")
+st.write(f"**Ricavi Netti Annuali:** €{ricavi_netti:,.2f}")
+st.write(f"**Costi Annuali Totali (Fissi e Operativi):** €{costi_annuali:,.2f}")
+st.write(f"**Cash Flow Annuo:** €{cash_flow_annuo:,.2f}")
+st.write(f"**Rendimento Netto (ROI):** {rendimento_netto:,.2f}%")
+st.write(f"**Payback Period:** {payback_period:,.2f} anni")
+st.write(f"**IRR (approssimato):** {irr:,.2f}%")
 
-for anno in range(1, 6):
-    st.write(f"**Anno {anno}:**")
-    st.write(f" - Ricavi Netti: €{ricavi_netti[anno-1]:,.2f}")
-    st.write(f" - Costi Operativi: €{costi_operativi[anno-1]:,.2f}")
-    st.write(f" - Flusso di Cassa: €{flusso_cassa[anno-1]:,.2f}")
+# Grafico dei Ricavi vs Costi
+fig, ax = plt.subplots()
+categorie = ['Ricavi Netti', 'Costi Operativi', 'Commissioni Piattaforme']
+valori = [ricavi_netti, costi_annuali, commissioni]
+ax.bar(categorie, valori, color=['green', 'red', 'blue'])
+ax.set_title('Confronto tra Ricavi e Costi')
+ax.set_ylabel('€')
 
-st.subheader("Investimento Iniziale")
-st.write(f"Investimento Iniziale: €{investimento_iniziale:,.2f}")
+st.pyplot(fig)
 
-# Grafico flusso di cassa
-import matplotlib.pyplot as plt
-plt.plot(range(1, 6), flusso_cassa, marker='o', color='blue', label="Flusso di Cassa Annuale")
-plt.xlabel("Anno")
-plt.ylabel("Flusso di Cassa (€)")
-plt.title("Flusso di Cassa Annuale")
-plt.grid(True)
-st.pyplot(plt)
+# Grafico del Cash Flow e Payback Period
+fig2, ax2 = plt.subplots()
+anni = np.arange(1, int(payback_period)+1)
+cash_flow = np.full_like(anni, cash_flow_annuo)
+ax2.plot(anni, cash_flow, label="Cash Flow Annuo", color='green')
+ax2.axhline(0, color='black',linewidth=1)
+ax2.set_title('Cash Flow Annuale e Payback Period')
+ax2.set_xlabel('Anno')
+ax2.set_ylabel('Cash Flow (€)')
+ax2.legend()
 
-# Conclusione
-if flusso_cassa[-1] > 0:
-    st.success("L'investimento è redditizio a partire dal quarto anno.")
-else:
-    st.warning("L'investimento non risulta redditizio nei primi anni. Potresti considerare una riduzione dei costi o aumentare l'occupazione per migliorare i risultati.")
+st.pyplot(fig2)
+
