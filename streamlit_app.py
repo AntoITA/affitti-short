@@ -2,123 +2,74 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 
-st.set_page_config(layout="wide")
+# Funzione di calcolo ROI
+def calcola_roi(prezzo_acquisto, valore_mercato, canone_annuo, spese_annual, imposte_annual, mutuo, durata_mutuo, tasso_mutuo, rivalutazione_annua=0.02):
+    # Calcolo del costo dell'immobile
+    valore_finale = prezzo_acquisto * (1 + rivalutazione_annua)
+    
+    # Calcolo dell'affitto netto (togliendo le spese e le imposte)
+    reddito_netto = canone_annuo - spese_annual - imposte_annual
+    
+    # Se c'è un mutuo, calcoliamo la rata annuale
+    if mutuo > 0:
+        rata_annua = mutuo * (tasso_mutuo / 100) * (1 + tasso_mutuo / 100)**durata_mutuo / ((1 + tasso_mutuo / 100)**durata_mutuo - 1)
+    else:
+        rata_annua = 0
+    
+    # Reddito netto dopo mutuo
+    reddito_netto_post_mutuo = reddito_netto - rata_annua
+    
+    # Calcolo ROI
+    investimento_totale = prezzo_acquisto + spese_annual + imposte_annual
+    ritorno_annuo = reddito_netto_post_mutuo + (valore_finale - prezzo_acquisto) / durata_mutuo
+    
+    roi = (ritorno_annuo / investimento_totale) * 100  # ROI in percentuale
+    return roi, reddito_netto_post_mutuo, rata_annua, valore_finale
 
-# --------------------------
-# PARAMETRI PRINCIPALI
-# --------------------------
+# Funzione di calcolo affitto vs acquisto
+def calcola_affitto_vs_acquisto(prezzo_acquisto, valore_mercato, canone_affitto, spese_annual, imposte_annual, mutuo, durata_mutuo, tasso_mutuo, rivalutazione_annua=0.02):
+    # Calcolo ROI per acquisto
+    roi_acquisto, _, _, _ = calcola_roi(prezzo_acquisto, valore_mercato, canone_affitto, spese_annual, imposte_annual, mutuo, durata_mutuo, tasso_mutuo, rivalutazione_annua)
+    
+    # Calcolo ROI per affitto (investendo il capitale iniziale)
+    capitale_iniziale = prezzo_acquisto * 0.2  # 20% del prezzo di acquisto come acconto
+    capitale_investito = capitale_iniziale  # Simuliamo l'investimento di questa cifra in un ETF o altro prodotto con ROI atteso
+    ritorno_annuo_affitto = capitale_investito * 0.05  # ROI ipotetico del 5% annuale sull'investimento
+    
+    # Confronto ROI acquisto vs affitto
+    roi_affitto = ritorno_annuo_affitto / capitale_investito * 100  # ROI in percentuale
 
-st.title("Analisi Investimento Immobiliare - Milano")
+    return roi_acquisto, roi_affitto
 
-st.sidebar.header("Parametri Immobile")
-prezzo_acquisto = st.sidebar.number_input("Prezzo di acquisto (€)", min_value=50000, max_value=1500000, value=300000, step=1000)
-rendita_lorda = st.sidebar.slider("Rendimento lordo annuo stimato (%)", 1.0, 10.0, 5.0)
-spese_gestione_annua = st.sidebar.number_input("Spese di gestione e mantenimento annuali (€)", value=1800)
-sfitto_percent = st.sidebar.slider("Percentuale sfitto annuale (%)", 0.0, 20.0, 5.0)
-tasse_cedolare = st.sidebar.slider("Cedolare secca / tassazione affitto (%)", 15, 26, 21)
+# Interfaccia Streamlit
+st.title("Analisi Investimento Immobiliare a Milano")
 
-# Rivalutazione immobile
-rivalutazione_annua = st.sidebar.slider("Rivalutazione immobile annua (%)", 0.0, 5.0, 1.5)
-anni_orizzonte = st.sidebar.slider("Orizzonte temporale analisi (anni)", 5, 30, 15)
+# Parametri input
+prezzo_acquisto = st.number_input("Prezzo di acquisto dell'immobile (€):", min_value=50000, max_value=5000000, step=10000, value=300000)
+canone_annuo = st.number_input("Canone di affitto annuale (€):", min_value=0, step=100, value=12000)
+spese_annual = st.number_input("Spese annuali di gestione (assicurazione, manutenzione, ecc.): (€)", min_value=0, step=100, value=2000)
+imposte_annual = st.number_input("Imposte annuali (cedolare secca, IMU, ecc.): (€)", min_value=0, step=100, value=1500)
+mutuo = st.number_input("Importo mutuo (€):", min_value=0, max_value=prezzo_acquisto, step=10000, value=200000)
+durata_mutuo = st.number_input("Durata del mutuo (anni):", min_value=5, max_value=30, step=1, value=20)
+tasso_mutuo = st.number_input("Tasso di interesse mutuo (%):", min_value=0.1, max_value=10.0, step=0.1, value=3.0)
+rivalutazione_annua = st.number_input("Rivalutazione annua dell'immobile (%):", min_value=0.0, max_value=10.0, step=0.1, value=2.0)
+canone_affitto = st.number_input("Canone mensile affitto (per comparazione): (€)", min_value=0, step=100, value=900)
 
-# Spese straordinarie
-spese_straordinarie = st.sidebar.number_input("Spese straordinarie previste totali in orizzonte (€)", value=5000)
+# Calcola ROI acquisto e affitto
+roi_acquisto, roi_affitto = calcola_affitto_vs_acquisto(prezzo_acquisto, prezzo_acquisto, canone_annuo, spese_annual, imposte_annual, mutuo, durata_mutuo, tasso_mutuo, rivalutazione_annua)
 
-# --------------------------
-# PARAMETRI MUTUO (FACOLTATIVO)
-# --------------------------
+# Visualizzazione
+st.subheader("Risultati:")
+st.write(f"**ROI Acquisto Immobiliare**: {roi_acquisto:.2f}% annuo")
+st.write(f"**ROI Affitto e Investimento Capitale**: {roi_affitto:.2f}% annuo")
 
-st.sidebar.header("Finanziamento (Mutuo)")
-usa_mutuo = st.sidebar.checkbox("Acquisto con mutuo?", value=False)
-
-if usa_mutuo:
-    percentuale_mutuo = st.sidebar.slider("Percentuale finanziata dal mutuo (%)", 50, 90, 70)
-    tasso_interesse = st.sidebar.slider("Tasso interesse mutuo (%)", 1.0, 5.0, 3.0)
-    durata_anni = st.sidebar.slider("Durata mutuo (anni)", 10, 35, 25)
-
-# --------------------------
-# COMPARAZIONE CON AFFITTO
-# --------------------------
-
-st.sidebar.header("Alternativa: Affitto Long-Term")
-canone_affitto = st.sidebar.number_input("Canone affitto mensile equivalente (€)", value=1100)
-invest_alt_rendimento = st.sidebar.slider("Rendimento alternativo investimento (%)", 2.0, 8.0, 4.0)
-
-# --------------------------
-# CALCOLI ECONOMICI
-# --------------------------
-
-rendita_lorda_euro = prezzo_acquisto * rendita_lorda / 100
-rendita_netto_post_sfitto = rendita_lorda_euro * (1 - sfitto_percent / 100)
-rendita_netto_post_tasse = rendita_netto_post_sfitto * (1 - tasse_cedolare / 100)
-cashflow_netto_annuo = rendita_netto_post_tasse - spese_gestione_annua
-
-valore_attuale = prezzo_acquisto
-storico_valori = []
-
-for anno in range(1, anni_orizzonte + 1):
-    valore_attuale *= (1 + rivalutazione_annua / 100)
-    storico_valori.append({
-        "Anno": anno,
-        "Valore Immobile": valore_attuale,
-        "Rendita Netta": cashflow_netto_annuo,
-        "Accumulato Netto": cashflow_netto_annuo * anno
-    })
-
-df = pd.DataFrame(storico_valori)
-
-# --------------------------
-# MUTUO
-# --------------------------
-
-if usa_mutuo:
-    quota_mutuo = prezzo_acquisto * percentuale_mutuo / 100
-    quota_contanti = prezzo_acquisto - quota_mutuo
-    r = tasso_interesse / 100 / 12
-    n = durata_anni * 12
-    rata_mensile = quota_mutuo * r * (1 + r) ** n / ((1 + r) ** n - 1)
-    rata_annua = rata_mensile * 12
-    cashflow_netto_post_mutuo = cashflow_netto_annuo - rata_annua
-    roi_netto = cashflow_netto_post_mutuo / quota_contanti * 100
+# Confronto affitto vs acquisto
+if roi_acquisto > roi_affitto:
+    st.write("L'acquisto dell'immobile è più vantaggioso rispetto all'affitto e investimento del capitale.")
 else:
-    quota_contanti = prezzo_acquisto
-    rata_annua = 0
-    cashflow_netto_post_mutuo = cashflow_netto_annuo
-    roi_netto = cashflow_netto_annuo / prezzo_acquisto * 100
+    st.write("Affittare e investire il capitale iniziale potrebbe essere una scelta migliore rispetto all'acquisto.")
 
-# --------------------------
-# ALTERNATIVA AFFITTO
-# --------------------------
-
-investimento_equivalente = quota_contanti * (invest_alt_rendimento / 100)
-costo_affitto_annuo = canone_affitto * 12
-differenza = investimento_equivalente - costo_affitto_annuo
-
-# --------------------------
-# RISULTATI
-# --------------------------
-
-st.header("📊 Risultati Economici")
-col1, col2 = st.columns(2)
-
-with col1:
-    st.subheader("Reddito Immobiliare")
-    st.metric("Cashflow netto annuo (€)", f"{cashflow_netto_post_mutuo:,.0f}")
-    st.metric("ROI netto (%)", f"{roi_netto:.2f}")
-    st.metric("Valore finale immobile (€)", f"{valore_attuale:,.0f}")
-
-with col2:
-    st.subheader("Alternativa: Affitto")
-    st.metric("Rendita alternativa (€)", f"{investimento_equivalente:,.0f}")
-    st.metric("Costo annuo affitto (€)", f"{costo_affitto_annuo:,.0f}")
-    st.metric("Differenza (€)", f"{differenza:,.0f}")
-
-st.markdown("---")
-st.subheader("📈 Evoluzione del Valore Immobiliare")
-st.line_chart(df.set_index("Anno")["Valore Immobile"])
-
-st.subheader("📄 Tabella riepilogativa")
-st.dataframe(df, use_container_width=True)
-
-st.markdown("---")
-st.markdown("💡 *Il calcolo include rivalutazione, tasse, sfitto, spese di mantenimento, mutuo (opzionale), e confronto con investimento alternativo e affitto.*")
+# Dettaglio del mutuo
+if mutuo > 0:
+    rata_annua = mutuo * (tasso_mutuo / 100) * (1 + tasso_mutuo / 100)**durata_mutuo / ((1 + tasso_mutuo / 100)**durata_mutuo - 1)
+    st.write(f"**Rata annuale mutuo**: {rata_annua:.2f} €")
