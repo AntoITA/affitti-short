@@ -1,5 +1,4 @@
 import streamlit as st
-import matplotlib.pyplot as plt
 
 # 📘 Dati iniziali di acquisto e spese generali
 st.set_page_config(page_title="Calcolo Affitto", layout="wide")
@@ -26,6 +25,11 @@ else:
 # 📘 Spese di ristrutturazione e notarili
 st.subheader("🔹 Spese di ristrutturazione e notarili")
 
+# Aggiunta di spiegazioni per i pulsanti
+st.markdown("""
+Se stai pensando di ristrutturare o acquistare un immobile, puoi trovare maggiori dettagli sui costi di ristrutturazione e sulle spese notarili/accessorie tramite i seguenti link.
+""")
+
 # Pulsanti per aprire le pagine web
 col1, col2 = st.columns(2)
 with col1:
@@ -36,7 +40,7 @@ with col2:
     if st.button("Spese notarili e accessorie mutuo"):
         st.markdown("[Clicca qui per calcolare le spese accessorie mutuo](https://www.mutuisupermarket.it/calcolo-mutuo/calcolo-spese-acquisto-casa)", unsafe_allow_html=True)
 
-# 📊 Sezione Spese fisse mensili
+# 📊 Spese fisse mensili
 st.header("🔹 Spese fisse e tasse")
 spese_fisse = {}
 spese_fisse["Condominio"] = st.number_input("Spese condominiali mensili (€)", min_value=0.0, value=100.0)
