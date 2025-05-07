@@ -133,6 +133,11 @@ spese_lungo["Manutenzione"] = st.number_input("Manutenzione ordinaria", min_valu
 spese_lungo["IMU / Tasse"] = st.number_input("Tasse (IMU ecc.)", min_value=0.0, value=100.0, key="imu_lungo")
 tasse_lungo = st.slider("Aliquota tasse affitto lungo (%)", 0.0, 30.0, 21.0, key="tasse_lungo")
 
+# Bottone per aprire il calcolatore IMU
+if st.button('Calcola IMU'):
+    st.write("**Clicca qui per calcolare l'IMU**")
+    st.markdown("[Vai al calcolatore IMU](https://www.tuttoimu.it/app/calcolo-imu.html)", unsafe_allow_html=True)
+
 totale_spese_lungo = sum(spese_lungo.values())
 tasse_mensili_lungo = affitto_lungo_mensile * (tasse_lungo / 100)
 profitto_mensile_lungo = affitto_lungo_mensile - totale_spese_lungo - tasse_mensili_lungo
