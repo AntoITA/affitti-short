@@ -1,7 +1,7 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 
-# 📘 Dati iniziali di acquisto e spese generiche
+# 📘 Dati iniziali di acquisto e spese generali
 st.set_page_config(page_title="Calcolo Affitto", layout="wide")
 st.title("🏡 Calcolo Affitto - Breve vs Lungo")
 st.markdown("In questa app puoi calcolare il profitto derivante dall'affitto breve e lungo.")
@@ -23,12 +23,30 @@ else:
     durata_mutuo = 0
     tasso_interesse = 0.0
 
+# 📘 Spese di ristrutturazione e notarili
+st.subheader("🔹 Spese di ristrutturazione e notarili")
+
+# Pulsanti per aprire le pagine web
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("Costi di ristrutturazione"):
+        st.markdown("[Clicca qui per vedere i costi di ristrutturazione](https://www.idealista.it/ristrutturazione/ristrutturazione-della-casa/)", unsafe_allow_html=True)
+
+with col2:
+    if st.button("Spese notarili e accessorie mutuo"):
+        st.markdown("[Clicca qui per calcolare le spese accessorie mutuo](https://www.mutuisupermarket.it/calcolo-mutuo/calcolo-spese-acquisto-casa)", unsafe_allow_html=True)
+
 # 📊 Sezione Spese fisse mensili
 st.header("🔹 Spese fisse e tasse")
 spese_fisse = {}
 spese_fisse["Condominio"] = st.number_input("Spese condominiali mensili (€)", min_value=0.0, value=100.0)
 spese_fisse["Manutenzione ordinaria"] = st.number_input("Manutenzione ordinaria mensile (€)", min_value=0.0, value=50.0)
 spese_fisse["IMU / Tasse"] = st.number_input("Tasse (IMU ecc.) mensili (€)", min_value=0.0, value=100.0)
+
+# Pulsante per il calcolo IMU
+if st.button("Calcola IMU"):
+    st.markdown("[Clicca qui per calcolare l'IMU](https://www.tuttoimu.it/app/calcolo-imu.html)", unsafe_allow_html=True)
+
 tasse_mensili = st.slider("Aliquota tasse affitto (%)", 0.0, 30.0, 21.0)
 
 # 📘 Affitto breve vs lungo
@@ -80,13 +98,26 @@ roi_lungo = (profitto_lungo_annuo / totale_investimento_iniziale) * 100 if total
 payback_breve = totale_investimento_iniziale / profitto_breve_annuo if profitto_breve_annuo > 0 else float('inf')
 payback_lungo = totale_investimento_iniziale / profitto_lungo_annuo if profitto_lungo_annuo > 0 else float('inf')
 
-# Visualizzazione grafica
+# Funzione per determinare il rating ROI
+def classify_roi(roi):
+    if roi < 5:
+        return "Basso", "red"
+    elif 5 <= roi < 10:
+        return "Medio", "orange"
+    else:
+        return "Alto", "green"
+
+# Classificazione ROI
+roi_breve_class, roi_breve_color = classify_roi(roi_breve)
+roi_lungo_class, roi_lungo_color = classify_roi(roi_lungo)
+
+# Visualizzazione grafica con indicatori di classificazione
 col1, col2 = st.columns(2)
 
-col1.metric("ROI annuo affitto breve", f"{roi_breve:.2f}%")
-col1.metric("Payback affitto breve", f"{payback_breve:.1f} anni" if payback_breve != float('inf') else "N/D")
-col2.metric("ROI annuo affitto lungo", f"{roi_lungo:.2f}%")
-col2.metric("Payback affitto lungo", f"{payback_lungo:.1f} anni" if payback_lungo != float('inf') else "N/D")
+col1.metric("ROI annuo affitto breve", f"{roi_breve:.2f}%", delta_color=roi_breve_color)
+col1.markdown(f"**Classificazione**: {roi_breve_class}", unsafe_allow_html=True)
+col2.metric("ROI annuo affitto lungo", f"{roi_lungo:.2f}%", delta_color=roi_lungo_color)
+col2.markdown(f"**Classificazione**: {roi_lungo_class}", unsafe_allow_html=True)
 
 # Grafico ROI
 fig, ax = plt.subplots(figsize=(8, 6))
