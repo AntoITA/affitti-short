@@ -134,12 +134,12 @@ spese_lungo["IMU / Tasse"] = st.number_input("Tasse (IMU ecc.)", min_value=0.0, 
 tasse_lungo = st.slider("Aliquota tasse affitto lungo (%)", 0.0, 30.0, 21.0, key="tasse_lungo")
 
 # Bottone per aprire il calcolatore IMU
-with col1:
+col1:
     # Primo bottone con il link al calcolo mutuo
     st.markdown("""
         <a href="https://www.tuttoimu.it/app/calcolo-imu.html" target="_blank">
             <button style="padding: 0.5em 1em; font-size: 16px; border: none; background-color: #4CAF50; color: white; border-radius: 5px; cursor: pointer;">
-            Calcola Spese Acquisto Casa (Mutuo)
+            Calcola IMU
             </button>
         </a>
     """, unsafe_allow_html=True)
