@@ -44,7 +44,7 @@ with col2:
 # Opzione di mutuo
 mutuo = st.checkbox("Considera mutuo nel calcolo", value=True)
 if mutuo:
-    tasso_mutuo = st.slider("Tasso d'interesse mutuo (%)", 0, 10, 3)
+    tasso_mutuo = st.number_input("Tasso d'interesse mutuo (%)", min_value=0.0, max_value=10.0, value=3.0, step=0.01)
     durata_mutuo = st.slider("Durata mutuo (anni)", 1, 30, 20)
     importo_mutuo = st.number_input("Importo mutuo (€)", min_value=0.0, value=prezzo_acquisto)
     spese_notarili += 2000  # aggiunta spese mutuo
