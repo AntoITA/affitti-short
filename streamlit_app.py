@@ -23,10 +23,10 @@ if mutuo:
     tasso_mutuo = st.slider("Tasso d'interesse mutuo (%)", 0, 10, 3)
     durata_mutuo = st.slider("Durata mutuo (anni)", 1, 30, 20)
     importo_mutuo = st.number_input("Importo mutuo (€)", min_value=0.0, value=prezzo_acquisto)
-    spese_notarili = spese_notarili + 2000  # es. per il mutuo
+    spese_notarili += 2000  # aggiunta spese mutuo
 
-# 📈 Entrate previste
-st.header("📈 Entrate previste")
+# 📈 Entrate previste affitto breve
+st.header("📈 Entrate previste - Affitto breve")
 col1, col2, col3 = st.columns(3)
 with col1:
     prezzo_notte = st.number_input("Prezzo medio per notte (€)", min_value=0.0, value=90.0)
@@ -47,49 +47,76 @@ costi_fissi['Pulizie'] = st.number_input("Pulizie", min_value=0.0, value=100.0)
 costi_fissi['Commissioni piattaforme'] = st.number_input("Commissioni piattaforme", min_value=0.0, value=80.0)
 costi_fissi['Manutenzione'] = st.number_input("Manutenzione media", min_value=0.0, value=50.0)
 costi_fissi['Tassa soggiorno / gestione'] = st.number_input("Tassa soggiorno / gestione", min_value=0.0, value=30.0)
-
 totale_costi_fissi = sum(costi_fissi.values())
 
-# Calcolo tasse
-def calcolo_tasse(ricavi, aliquota):
-    return ricavi * (aliquota / 100)
+# Aliquota tasse
+tasse_breve = st.slider("Aliquota tasse affitto breve (%)", 0.0, 30.0, 21.0, key="tasse_breve")
+tasse_mensili_breve = ricavo_lordo_mensile * (tasse_breve / 100)
 
-# Calcolo del profitto
-profitto_mensile = ricavo_lordo_mensile - totale_costi_fissi
+# Profitto netto affitto breve
+profitto_mensile = ricavo_lordo_mensile - totale_costi_fissi - tasse_mensili_breve
 profitto_annuo = profitto_mensile * 12
 roi = (profitto_annuo / totale_investimento_iniziale * 100) if totale_investimento_iniziale > 0 else 0
 payback = (totale_investimento_iniziale / profitto_annuo) if profitto_annuo > 0 else float('inf')
 
-# 📊 Indicatori di redditività
-st.header("📊 Indicatori di redditività")
+# 📊 Indicatori di redditività affitto breve
+st.header("📊 Indicatori di redditività - Affitto breve")
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("ROI annuo (%)", f"{roi:.2f}%")
 col2.metric("Payback period (anni)", f"{payback:.1f}" if payback != float('inf') else "N/D")
 col3.metric("Cash flow mensile", f"€ {profitto_mensile:,.2f}")
 col4.metric("Cash flow annuo", f"€ {profitto_annuo:,.2f}")
 
-# Valutazione qualitativa della redditività
-if roi >= 8:
-    st.success("🔝 Redditività **Alta** (ROI ≥ 8%)")
-elif roi >= 4:
-    st.warning("⚠️ Redditività **Media** (4% ≤ ROI < 8%)")
-else:
-    st.error("🔻 Redditività **Bassa** (ROI < 4%)")
-
-
-# 📈 Grafico entrate e costi mensili
-st.header("📉 Grafico entrate e costi mensili")
+# 📈 Grafico entrate e costi mensili affitto breve
+st.header("📉 Grafico entrate e costi mensili - Affitto breve")
 data = pd.DataFrame({
-    'Categoria': ['Entrate', 'Costi fissi', 'Profitto netto'],
-    'Euro': [ricavo_lordo_mensile, totale_costi_fissi, profitto_mensile]
+    'Categoria': ['Entrate', 'Costi fissi', 'Tasse', 'Profitto netto'],
+    'Euro': [ricavo_lordo_mensile, totale_costi_fissi, tasse_mensili_breve, profitto_mensile]
 })
 fig, ax = plt.subplots()
-ax.bar(data['Categoria'], data['Euro'], color=['green', 'red', 'blue'])
+ax.bar(data['Categoria'], data['Euro'], color=['green', 'red', 'orange', 'blue'])
 ax.set_ylabel('€')
-ax.set_title('Confronto mensile')
+ax.set_title('Confronto mensile affitto breve')
 st.pyplot(fig)
 
-# Esporta dati
+# 📘 AFFITTO LUNGO
+st.header("🏡 Affitto lungo termine")
+affitto_lungo_mensile = st.number_input("Canone affitto lungo (€ / mese)", min_value=0.0, value=900.0)
+spese_lungo = {}
+spese_lungo["Condominio"] = st.number_input("Spese condominiali a carico locatore", min_value=0.0, value=100.0, key="condo_lungo")
+spese_lungo["Manutenzione"] = st.number_input("Manutenzione ordinaria", min_value=0.0, value=50.0, key="manut_lungo")
+spese_lungo["IMU / Tasse"] = st.number_input("Tasse (IMU ecc.)", min_value=0.0, value=100.0, key="imu_lungo")
+tasse_lungo = st.slider("Aliquota tasse affitto lungo (%)", 0.0, 30.0, 21.0, key="tasse_lungo")
+
+totale_spese_lungo = sum(spese_lungo.values())
+tasse_mensili_lungo = affitto_lungo_mensile * (tasse_lungo / 100)
+profitto_mensile_lungo = affitto_lungo_mensile - totale_spese_lungo - tasse_mensili_lungo
+profitto_annuo_lungo = profitto_mensile_lungo * 12
+roi_lungo = (profitto_annuo_lungo / totale_investimento_iniziale * 100) if totale_investimento_iniziale > 0 else 0
+
+# Confronto affitto lungo vs breve
+st.header("📊 Confronto Affitto Breve vs Lungo")
+col1, col2, col3 = st.columns(3)
+col1.metric("Profitto mensile breve", f"€ {profitto_mensile:,.2f}")
+col1.metric("Profitto mensile lungo", f"€ {profitto_mensile_lungo:,.2f}")
+col2.metric("ROI annuo breve", f"{roi:.2f}%")
+col2.metric("ROI annuo lungo", f"{roi_lungo:.2f}%")
+col3.metric("Payback breve", f"{payback:.1f}" if payback != float('inf') else "N/D")
+col3.metric("Payback lungo", f"{(totale_investimento_iniziale / profitto_annuo_lungo):.1f}" if profitto_annuo_lungo > 0 else "N/D")
+
+# 📉 Grafico confronto
+df_confronto = pd.DataFrame({
+    'Tipo': ['Breve', 'Lungo'],
+    'Profitto mensile': [profitto_mensile, profitto_mensile_lungo],
+    'ROI annuo (%)': [roi, roi_lungo]
+})
+fig2, ax2 = plt.subplots()
+df_confronto.set_index('Tipo')[['Profitto mensile', 'ROI annuo (%)']].plot(kind='bar', ax=ax2)
+ax2.set_title('Confronto affitto breve vs lungo')
+ax2.set_ylabel('€ / %')
+st.pyplot(fig2)
+
+# Esportazione dati
 st.header("⬇️ Esporta dati")
 dati_export = {
     'Prezzo medio per notte': prezzo_notte,
@@ -97,104 +124,25 @@ dati_export = {
     'Notti affittabili': notti_affittabili,
     'Ricavo lordo mensile': ricavo_lordo_mensile,
     'Totale costi fissi': totale_costi_fissi,
-    'Totale investimento iniziale': totale_investimento_iniziale,
-    'Profitto mensile': profitto_mensile,
-    'Profitto annuo': profitto_annuo,
-    'ROI annuo (%)': roi,
-    'Payback (anni)': payback
+    'Tasse affitto breve': tasse_mensili_breve,
+    'Profitto mensile breve': profitto_mensile,
+    'Profitto annuo breve': profitto_annuo,
+    'ROI breve (%)': roi,
+    'Affitto lungo mensile': affitto_lungo_mensile,
+    'Spese lungo': totale_spese_lungo,
+    'Tasse affitto lungo': tasse_mensili_lungo,
+    'Profitto mensile lungo': profitto_mensile_lungo,
+    'Profitto annuo lungo': profitto_annuo_lungo,
+    'ROI lungo (%)': roi_lungo,
 }
 df_export = pd.DataFrame(dati_export.items(), columns=['Voce', 'Valore'])
 csv = df_export.to_csv(index=False).encode('utf-8')
 st.download_button(
     label="Scarica dati in CSV",
     data=csv,
-    file_name='report_affitto.csv',
+    file_name='report_confronto_affitto.csv',
     mime='text/csv'
 )
-# 🔄 Confronto ROI netto tra affitto breve e lungo
-st.markdown("## 📊 Confronto ROI netto: Affitto breve vs. Affitto lungo")
-
-st.markdown("Personalizza i dati per valutare quale modalità di affitto conviene di più, al netto dei costi e delle imposte.")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    ricavo_breve_annuo = st.number_input("Ricavo annuo affitto breve (€)", value=ricavo_lordo_mensile * 12)
-    costi_breve_annui = st.number_input("Costi annuali gestione breve (€)", value=totale_costi_fissi * 12)
-    tasse_breve = st.slider("Aliquota tasse affitto breve (%)", 0.0, 30.0, 21.0)
-
-with col2:
-    ricavo_lungo_annuo = st.number_input("Ricavo annuo affitto lungo (€)", value=11000.0)
-    costi_lungo_annui = st.number_input("Costi annuali gestione lungo (€)", value=1000.0)
-    tasse_lungo = st.slider("Aliquota tasse affitto lungo (%)", 0.0, 30.0, 21.0)
-
-# Calcolo ROI netto
-netto_breve = (ricavo_breve_annuo - costi_breve_annui) * (1 - tasse_breve / 100)
-netto_lungo = (ricavo_lungo_annuo - costi_lungo_annui) * (1 - tasse_lungo / 100)
-
-roi_netto_breve = netto_breve / totale_investimento_iniziale * 100 if totale_investimento_iniziale > 0 else 0
-roi_netto_lungo = netto_lungo / totale_investimento_iniziale * 100 if totale_investimento_iniziale > 0 else 0
-
-col1, col2 = st.columns(2)
-col1.metric("ROI Netto Affitto Breve (%)", f"{roi_netto_breve:.2f}%")
-col2.metric("ROI Netto Affitto Lungo (%)", f"{roi_netto_lungo:.2f}%")
-
-# Grafico comparativo
-df_roi = pd.DataFrame({
-    "Tipo": ["Affitto Breve", "Affitto Lungo"],
-    "ROI Netto": [roi_netto_breve, roi_netto_lungo]
-})
-fig, ax = plt.subplots()
-ax.bar(df_roi["Tipo"], df_roi["ROI Netto"], color=["green", "blue"])
-ax.set_ylabel("ROI Netto (%)")
-ax.set_title("Confronto ROI Netto")
-st.pyplot(fig)
-
-# 🔄 Confronto ROI netto tra affitto breve e lungo
-st.markdown("## 📊 Confronto ROI netto: Affitto breve vs. Affitto lungo")
-
-st.markdown("Confronto tra la redditività dell'affitto breve (dati già inseriti sopra) e un affitto lungo personalizzabile.")
-
-# --- Affitto breve: uso dei dati già inseriti ---
-ricavo_breve_annuo = ricavo_lordo_mensile * 12
-costi_breve_annui = totale_costi_fissi * 12
-tasse_breve = st.slider("Aliquota tasse affitto breve (%)", 0.0, 30.0, 21.0)
-
-# Calcolo netto affitto breve
-netto_breve = (ricavo_breve_annuo - costi_breve_annui) * (1 - tasse_breve / 100)
-roi_netto_breve = netto_breve / totale_investimento_iniziale * 100 if totale_investimento_iniziale > 0 else 0
-
-# --- Affitto lungo: input dettagliati ---
-st.markdown("### 🧾 Dettagli affitto lungo termine")
-col1, col2 = st.columns(2)
-with col1:
-    affitto_mensile = st.number_input("Canone affitto mensile (€)", min_value=0.0, value=900.0)
-    spese_condominio = st.number_input("Spese condominiali annuali a carico proprietario (€)", min_value=0.0, value=600.0)
-with col2:
-    spese_annuali_lungo = st.number_input("Altre spese annuali (manutenzione, assicurazione, ecc.) (€)", min_value=0.0, value=400.0)
-    tasse_lungo = st.slider("Aliquota tasse affitto lungo (%)", 0.0, 30.0, 21.0)
-
-ricavo_lungo_annuo = affitto_mensile * 12
-costi_lungo_annui = spese_condominio + spese_annuali_lungo
-netto_lungo = (ricavo_lungo_annuo - costi_lungo_annui) * (1 - tasse_lungo / 100)
-roi_netto_lungo = netto_lungo / totale_investimento_iniziale * 100 if totale_investimento_iniziale > 0 else 0
-
-# 📈 Visualizzazione risultati
-st.markdown("### 📈 Confronto ROI Netto")
-col1, col2 = st.columns(2)
-col1.metric("ROI Netto Affitto Breve (%)", f"{roi_netto_breve:.2f}%")
-col2.metric("ROI Netto Affitto Lungo (%)", f"{roi_netto_lungo:.2f}%")
-
-# 📊 Grafico comparativo
-df_roi = pd.DataFrame({
-    "Tipo": ["Affitto Breve", "Affitto Lungo"],
-    "ROI Netto": [roi_netto_breve, roi_netto_lungo]
-})
-fig, ax = plt.subplots()
-ax.bar(df_roi["Tipo"], df_roi["ROI Netto"], color=["green", "blue"])
-ax.set_ylabel("ROI Netto (%)")
-ax.set_title("Confronto ROI Netto Affitto Breve vs Lungo")
-st.pyplot(fig)
 
 # Footer
 st.markdown("---")
