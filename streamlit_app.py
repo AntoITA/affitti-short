@@ -149,9 +149,14 @@ roi_lungo = (profitto_annuo_lungo / totale_investimento_iniziale * 100) if total
 # Aggiungere il bottone in una colonna singola
 col1, = st.columns([1])  # crea una colonna a larghezza singola
 with col1:
-    # Utilizzo di un link HTML per il reindirizzamento
-    if st.button('Vai al calcolatore IMU'):
-        st.markdown(f'<a href="https://www.tuttoimu.it/app/calcolo-imu.html" target="_blank">Clicca qui per calcolare l\'IMU</a>', unsafe_allow_html=True)
+    # Primo bottone con il link al calcolo mutuo
+    st.markdown("""
+        <a href="https://www.tuttoimu.it/app/calcolo-imu.html" target="_blank">
+            <button style="padding: 0.5em 1em; font-size: 16px; border: none; background-color: #4CAF50; color: white; border-radius: 5px; cursor: pointer;">
+            Vai al calcolatore IMU
+            </button>
+        </a>
+    """, unsafe_allow_html=True)
 
 # Confronto affitto lungo vs breve
 st.header("📊 Confronto Affitto Breve vs Lungo")
