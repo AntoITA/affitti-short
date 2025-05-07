@@ -124,6 +124,8 @@ ax.set_ylabel('€')
 ax.set_title('Confronto mensile affitto breve')
 st.pyplot(fig)
 
+import streamlit as st
+
 # 📘 AFFITTO LUNGO
 st.header("🏡 Affitto lungo termine")
 
@@ -153,8 +155,9 @@ st.write("Clicca sul bottone qui sotto per accedere al calcolatore IMU.")
 # Aggiungere il bottone in una colonna singola
 col1, = st.columns([1])  # crea una colonna a larghezza singola
 with col1:
+    # Utilizzo di un link HTML per il reindirizzamento
     if st.button('Vai al calcolatore IMU'):
-        st.experimental_redirect("https://www.tuttoimu.it/app/calcolo-imu.html")
+        st.markdown(f'<a href="https://www.tuttoimu.it/app/calcolo-imu.html" target="_blank">Clicca qui per calcolare l\'IMU</a>', unsafe_allow_html=True)
 
 # Confronto affitto lungo vs breve
 st.header("📊 Confronto Affitto Breve vs Lungo")
