@@ -17,6 +17,12 @@ with col2:
 
 totale_investimento_iniziale = prezzo_acquisto + spese_notarili + ristrutturazione + altre_spese
 
+# Web calcolo Spese acquisto casa
+
+<button onclick="window.open('https://www.mutuisupermarket.it/calcolo-mutuo/calcolo-spese-acquisto-casa', '_blank')">
+  Calcola Spese Acquisto Casa
+</button>
+
 # Opzione di mutuo
 mutuo = st.checkbox("Considera mutuo nel calcolo", value=True)
 if mutuo:
