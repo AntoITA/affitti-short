@@ -91,6 +91,27 @@ col2.metric("Payback period (anni)", f"{payback:.1f}" if payback != float('inf')
 col3.metric("Cash flow mensile", f"€ {profitto_mensile:,.2f}")
 col4.metric("Cash flow annuo", f"€ {profitto_annuo:,.2f}")
 
+# Calcolo del ROI e del Payback
+roi = (profitto_annuo / totale_investimento_iniziale * 100) if totale_investimento_iniziale > 0 else 0
+payback = (totale_investimento_iniziale / profitto_annuo) if profitto_annuo > 0 else float('inf')
+
+# Indicatori di redditività
+st.header("📊 Indicatori di redditività")
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("ROI annuo (%)", f"{roi:.2f}%")
+col2.metric("Payback period (anni)", f"{payback:.1f}" if payback != float('inf') else "N/D")
+col3.metric("Cash flow mensile", f"€ {profitto_mensile:,.2f}")
+col4.metric("Cash flow annuo", f"€ {profitto_annuo:,.2f}")
+
+# Valutazione qualitativa della redditività
+if roi >= 8:
+    st.success("🔝 Redditività **Alta** (ROI ≥ 8%)")
+elif roi >= 4:
+    st.warning("⚠️ Redditività **Media** (4% ≤ ROI < 8%)")
+else:
+    st.error("🔻 Redditività **Bassa** (ROI < 4%)")
+
+
 # 📈 Grafico entrate e costi mensili affitto breve
 st.header("📉 Grafico entrate e costi mensili - Affitto breve")
 data = pd.DataFrame({
