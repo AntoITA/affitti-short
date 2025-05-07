@@ -146,12 +146,6 @@ profitto_annuo_lungo = profitto_mensile_lungo * 12
 totale_investimento_iniziale = 100000  # esempio
 roi_lungo = (profitto_annuo_lungo / totale_investimento_iniziale * 100) if totale_investimento_iniziale > 0 else 0
 
-# Bottone per aprire il calcolatore IMU
-st.write("### Calcolo IMU")
-
-# Descrizione
-st.write("Clicca sul bottone qui sotto per accedere al calcolatore IMU.")
-
 # Aggiungere il bottone in una colonna singola
 col1, = st.columns([1])  # crea una colonna a larghezza singola
 with col1:
