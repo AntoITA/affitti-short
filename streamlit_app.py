@@ -134,15 +134,20 @@ spese_lungo["IMU / Tasse"] = st.number_input("Tasse (IMU ecc.)", min_value=0.0, 
 tasse_lungo = st.slider("Aliquota tasse affitto lungo (%)", 0.0, 30.0, 21.0, key="tasse_lungo")
 
 # Bottone per aprire il calcolatore IMU
-col1:
-    # Primo bottone con il link al calcolo mutuo
-    st.markdown("""
-        <a href="https://www.tuttoimu.it/app/calcolo-imu.html" target="_blank">
-            <button style="padding: 0.5em 1em; font-size: 16px; border: none; background-color: #4CAF50; color: white; border-radius: 5px; cursor: pointer;">
-            Calcola IMU
-            </button>
-        </a>
-    """, unsafe_allow_html=True)
+st.set_page_config(layout="wide")
+
+# Titolo dell'app
+st.title("Calcolo IMU")
+
+# Descrizione
+st.write("Clicca sul bottone qui sotto per accedere al calcolatore IMU.")
+
+# Aggiungere il bottone in una colonna singola
+col1, = st.columns([1])  # crea una colonna a larghezza singola
+with col1:
+    if st.button('Vai al calcolatore IMU'):
+        st.experimental_redirect("https://www.tuttoimu.it/app/calcolo-imu.html")
+
 
 totale_spese_lungo = sum(spese_lungo.values())
 tasse_mensili_lungo = affitto_lungo_mensile * (tasse_lungo / 100)
