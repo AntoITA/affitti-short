@@ -43,7 +43,7 @@ with col3:
     # Secondo bottone con il link per il calcolo dei costi
     st.markdown("""
         <a href="https://www.tuttoimu.it/app/calcolo-imu.html" target="_blank">
-            <button style="padding: 0.5em 1em; font-size: 16px; border: none; background-color: #B0E0E6; color: white; border-radius: 5px; cursor: pointer;">
+            <button style="padding: 0.5em 1em; font-size: 16px; border: none; background-color: #7B68EE; color: white; border-radius: 5px; cursor: pointer;">
             Calcola IMU
             </button>
         </a>
@@ -54,7 +54,7 @@ totale_investimento_iniziale = prezzo_acquisto + spese_notarili + ristrutturazio
 # Opzione di mutuo
 mutuo = st.checkbox("Considera mutuo nel calcolo", value=True)
 if mutuo:
-    tasso_mutuo = st.slider("Tasso d'interesse mutuo (%)", 0, 10, 3)
+    tasso_mutuo = st.slider("Tasso d'interesse mutuo (%)", 0.0, 10.0, 3.0, step=0.1)
     durata_mutuo = st.slider("Durata mutuo (anni)", 1, 30, 20)
     importo_mutuo = st.number_input("Importo mutuo (€)", min_value=0.0, value=prezzo_acquisto)
     spese_notarili += 2000  # es. per il mutuo
