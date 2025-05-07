@@ -150,6 +150,52 @@ ax.set_ylabel("ROI Netto (%)")
 ax.set_title("Confronto ROI Netto")
 st.pyplot(fig)
 
+# 🔄 Confronto ROI netto tra affitto breve e lungo
+st.markdown("## 📊 Confronto ROI netto: Affitto breve vs. Affitto lungo")
+
+st.markdown("Confronto tra la redditività dell'affitto breve (dati già inseriti sopra) e un affitto lungo personalizzabile.")
+
+# --- Affitto breve: uso dei dati già inseriti ---
+ricavo_breve_annuo = ricavo_lordo_mensile * 12
+costi_breve_annui = totale_costi_fissi * 12
+tasse_breve = st.slider("Aliquota tasse affitto breve (%)", 0.0, 30.0, 21.0)
+
+# Calcolo netto affitto breve
+netto_breve = (ricavo_breve_annuo - costi_breve_annui) * (1 - tasse_breve / 100)
+roi_netto_breve = netto_breve / totale_investimento_iniziale * 100 if totale_investimento_iniziale > 0 else 0
+
+# --- Affitto lungo: input dettagliati ---
+st.markdown("### 🧾 Dettagli affitto lungo termine")
+col1, col2 = st.columns(2)
+with col1:
+    affitto_mensile = st.number_input("Canone affitto mensile (€)", min_value=0.0, value=900.0)
+    spese_condominio = st.number_input("Spese condominiali annuali a carico proprietario (€)", min_value=0.0, value=600.0)
+with col2:
+    spese_annuali_lungo = st.number_input("Altre spese annuali (manutenzione, assicurazione, ecc.) (€)", min_value=0.0, value=400.0)
+    tasse_lungo = st.slider("Aliquota tasse affitto lungo (%)", 0.0, 30.0, 21.0)
+
+ricavo_lungo_annuo = affitto_mensile * 12
+costi_lungo_annui = spese_condominio + spese_annuali_lungo
+netto_lungo = (ricavo_lungo_annuo - costi_lungo_annui) * (1 - tasse_lungo / 100)
+roi_netto_lungo = netto_lungo / totale_investimento_iniziale * 100 if totale_investimento_iniziale > 0 else 0
+
+# 📈 Visualizzazione risultati
+st.markdown("### 📈 Confronto ROI Netto")
+col1, col2 = st.columns(2)
+col1.metric("ROI Netto Affitto Breve (%)", f"{roi_netto_breve:.2f}%")
+col2.metric("ROI Netto Affitto Lungo (%)", f"{roi_netto_lungo:.2f}%")
+
+# 📊 Grafico comparativo
+df_roi = pd.DataFrame({
+    "Tipo": ["Affitto Breve", "Affitto Lungo"],
+    "ROI Netto": [roi_netto_breve, roi_netto_lungo]
+})
+fig, ax = plt.subplots()
+ax.bar(df_roi["Tipo"], df_roi["ROI Netto"], color=["green", "blue"])
+ax.set_ylabel("ROI Netto (%)")
+ax.set_title("Confronto ROI Netto Affitto Breve vs Lungo")
+st.pyplot(fig)
+
 # Footer
 st.markdown("---")
 st.caption("App creata con ❤️ usando Streamlit - Tutti i dati sono simulazioni modificabili")
