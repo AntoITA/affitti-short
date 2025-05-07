@@ -126,6 +126,8 @@ st.pyplot(fig)
 
 # 📘 AFFITTO LUNGO
 st.header("🏡 Affitto lungo termine")
+
+# Input dati affitto lungo
 affitto_lungo_mensile = st.number_input("Canone affitto lungo (€ / mese)", min_value=0.0, value=900.0)
 spese_lungo = {}
 spese_lungo["Condominio"] = st.number_input("Spese condominiali a carico locatore", min_value=0.0, value=100.0, key="condo_lungo")
@@ -133,11 +135,17 @@ spese_lungo["Manutenzione"] = st.number_input("Manutenzione ordinaria", min_valu
 spese_lungo["IMU / Tasse"] = st.number_input("Tasse (IMU ecc.)", min_value=0.0, value=100.0, key="imu_lungo")
 tasse_lungo = st.slider("Aliquota tasse affitto lungo (%)", 0.0, 30.0, 21.0, key="tasse_lungo")
 
-# Bottone per aprire il calcolatore IMU
-st.set_page_config(layout="wide")
+# Calcolo delle spese e profitto
+totale_spese_lungo = sum(spese_lungo.values())
+tasse_mensili_lungo = affitto_lungo_mensile * (tasse_lungo / 100)
+profitto_mensile_lungo = affitto_lungo_mensile - totale_spese_lungo - tasse_mensili_lungo
+profitto_annuo_lungo = profitto_mensile_lungo * 12
+# Aggiungi qui la variabile totale_investimento_iniziale per calcolare il ROI
+totale_investimento_iniziale = 100000  # esempio
+roi_lungo = (profitto_annuo_lungo / totale_investimento_iniziale * 100) if totale_investimento_iniziale > 0 else 0
 
-# Titolo dell'app
-st.title("Calcolo IMU")
+# Bottone per aprire il calcolatore IMU
+st.write("### Calcolo IMU")
 
 # Descrizione
 st.write("Clicca sul bottone qui sotto per accedere al calcolatore IMU.")
@@ -148,22 +156,15 @@ with col1:
     if st.button('Vai al calcolatore IMU'):
         st.experimental_redirect("https://www.tuttoimu.it/app/calcolo-imu.html")
 
-
-totale_spese_lungo = sum(spese_lungo.values())
-tasse_mensili_lungo = affitto_lungo_mensile * (tasse_lungo / 100)
-profitto_mensile_lungo = affitto_lungo_mensile - totale_spese_lungo - tasse_mensili_lungo
-profitto_annuo_lungo = profitto_mensile_lungo * 12
-roi_lungo = (profitto_annuo_lungo / totale_investimento_iniziale * 100) if totale_investimento_iniziale > 0 else 0
-
 # Confronto affitto lungo vs breve
 st.header("📊 Confronto Affitto Breve vs Lungo")
 col1, col2, col3 = st.columns(3)
-col1.metric("Profitto mensile breve", f"€ {profitto_mensile:,.2f}")
+col1.metric("Profitto mensile breve", f"€ {profitto_mensile_lungo:,.2f}")
 col1.metric("Profitto mensile lungo", f"€ {profitto_mensile_lungo:,.2f}")
-col2.metric("ROI annuo breve", f"{roi:.2f}%")
+col2.metric("ROI annuo breve", f"{roi_lungo:.2f}%")
 col2.metric("ROI annuo lungo", f"{roi_lungo:.2f}%")
-col3.metric("Payback breve", f"{payback:.1f}" if payback != float('inf') else "N/D")
 col3.metric("Payback lungo", f"{(totale_investimento_iniziale / profitto_annuo_lungo):.1f}" if profitto_annuo_lungo > 0 else "N/D")
+
 
 # 📉 Grafico confronto
 df_confronto = pd.DataFrame({
