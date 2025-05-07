@@ -34,7 +34,7 @@ with col1:
 with col2:
     # Secondo bottone con il link per il calcolo dei costi
     st.markdown("""
-        <a href="https://www.idealista.it/ristrutturazione/" target="_blank">
+        <a href="https://www.idealista.it/ristrutturazione/ristrutturazione-della-casa/" target="_blank">
             <button style="padding: 0.5em 1em; font-size: 16px; border: none; background-color: #008CBA; color: white; border-radius: 5px; cursor: pointer;">
             Calcola Costi Acquisto Casa
             </button>
