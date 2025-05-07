@@ -17,15 +17,29 @@ with col2:
 
 totale_investimento_iniziale = prezzo_acquisto + spese_notarili + ristrutturazione + altre_spese
 
-# Bottone con link
-st.markdown("""
-    <a href="https://www.mutuisupermarket.it/calcolo-mutuo/calcolo-spese-acquisto-casa" 
-       target="_blank">
-       <button style="padding: 0.5em 1em; font-size: 16px; border: none; background-color: #4CAF50; color: white; border-radius: 5px; cursor: pointer;">
-       Calcola Spese Acquisto Casa
-       </button>
-    </a>
-""", unsafe_allow_html=True)
+# BOTTONI LINK
+# Creiamo due colonne per i bottoni affiancati
+col1, col2 = st.columns(2)
+
+with col1:
+    # Primo bottone con il link al calcolo mutuo
+    st.markdown("""
+        <a href="https://www.mutuisupermarket.it/calcolo-mutuo/calcolo-spese-acquisto-casa" target="_blank">
+            <button style="padding: 0.5em 1em; font-size: 16px; border: none; background-color: #4CAF50; color: white; border-radius: 5px; cursor: pointer;">
+            Calcola Spese Acquisto Casa (Mutuo)
+            </button>
+        </a>
+    """, unsafe_allow_html=True)
+
+with col2:
+    # Secondo bottone con il link per il calcolo dei costi
+    st.markdown("""
+        <a href="https://costi.lavorincasa.it/calcolo/" target="_blank">
+            <button style="padding: 0.5em 1em; font-size: 16px; border: none; background-color: #008CBA; color: white; border-radius: 5px; cursor: pointer;">
+            Calcola Costi Acquisto Casa
+            </button>
+        </a>
+    """, unsafe_allow_html=True)
 
 # Opzione di mutuo
 mutuo = st.checkbox("Considera mutuo nel calcolo", value=True)
