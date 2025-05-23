@@ -1,99 +1,55 @@
-from pathlib import Path
-
-# Codice aggiornato Streamlit completo con fiscalità, simulazione multi-anno, export
-streamlit_code = '''
 import streamlit as st
-import numpy_financial as npf
-import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.stats import norm
+from scipy.optimize import brentq
 
-st.set_page_config(page_title="Simulatore ROI Immobiliare", layout="centered")
+st.title("Superficie di Volatilità Implicita - Opzioni")
 
-st.title("📊 Simulatore ROI Immobiliare: Affitto Studenti vs Airbnb")
+# Input generali
+S0 = st.number_input("Prezzo attuale dell'azione (S0)", value=100.0)
+r = st.number_input("Tasso risk-free (decimale)", value=0.01)
 
-st.header("📌 Dati di base")
+st.markdown("### Inserisci i dati delle opzioni")
+num_opzioni = st.number_input("Numero di opzioni", min_value=1, max_value=50, value=5)
 
-col1, col2 = st.columns(2)
+strike_list = []
+maturity_list = []
+option_price_list = []
 
-with col1:
-    prezzo_casa = st.number_input("Prezzo immobile (€)", value=160000, step=5000)
-    percentuale_mutuo = st.slider("Percentuale mutuo (%)", 0, 100, 80)
-    tasso_interesse = st.slider("Tasso interesse mutuo (%)", 0.0, 10.0, 3.5)
-    anni_mutuo = st.slider("Durata mutuo (anni)", 5, 30, 25)
+for i in range(num_opzioni):
+    st.markdown(f"**Opzione {i+1}**")
+    strike = st.number_input(f"Strike price (K) {i+1}", key=f"strike_{i}", value=100.0 + i * 5)
+    maturity = st.number_input(f"Tempo alla scadenza (anni) {i+1}", key=f"maturity_{i}", value=0.5 + i * 0.1)
+    price = st.number_input(f"Prezzo dell'opzione {i+1}", key=f"price_{i}", value=5.0 + i)
 
-with col2:
-    spese_extra = st.number_input("Spese iniziali (notaio, agenzia, ecc.) (€)", value=15000, step=1000)
-    spese_annue = st.number_input("Spese fisse annue (IMU, condominio, manutenzioni, ecc.) (€)", value=2000, step=500)
-    anni_simulazione = st.slider("Anni simulazione", 1, 30, 10)
-    inflazione = st.slider("Inflazione media annua (%)", 0.0, 5.0, 2.0)
+    strike_list.append(strike)
+    maturity_list.append(maturity)
+    option_price_list.append(price)
 
-# Calcoli mutuo
-capitale_proprio = prezzo_casa * (1 - percentuale_mutuo / 100)
-importo_mutuo = prezzo_casa - capitale_proprio
-rata_mensile = -npf.pmt(tasso_interesse / 100 / 12, anni_mutuo * 12, importo_mutuo)
-rata_annua = rata_mensile * 12
+# Calcolo della volatilità implicita
+def black_scholes_call(S, K, T, r, sigma):
+    d1 = (np.log(S/K) + (r + 0.5 * sigma**2)*T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    return S * norm.cdf(d1) - K * np.exp(-r*T) * norm.cdf(d2)
 
-st.subheader("📉 Calcolo rata e capitale")
-investimento_totale = capitale_proprio + spese_extra
-st.write(f"💰 Capitale proprio investito: **€ {investimento_totale:,.0f}**")
-st.write(f"🏦 Rata mensile stimata: **€ {rata_mensile:,.2f}**")
-st.write(f"📅 Rata annua stimata: **€ {rata_annua:,.2f}**")
+def implied_volatility(S, K, T, r, market_price):
+    try:
+        iv = brentq(lambda sigma: black_scholes_call(S, K, T, r, sigma) - market_price, 1e-6, 5.0)
+        return iv
+    except:
+        return np.nan
 
-# Scenario studenti
-st.header("🏠 Scenario 1: Affitto a studenti")
-canone_studente = st.number_input("Canone mensile (€)", value=600, step=50)
-st.subheader("📈 Simulazione annua")
-data = []
-valore_immobile = prezzo_casa
+vol_surface = np.array([implied_volatility(S0, K, T, r, P) for K, T, P in zip(strike_list, maturity_list, option_price_list)])
 
-for anno in range(1, anni_simulazione + 1):
-    canone_attuale = canone_studente * 12 * ((1 + inflazione/100) ** (anno - 1))
-    tasse = canone_attuale * 0.21
-    netto = canone_attuale - tasse - spese_annue
-    valore_immobile *= (1 + inflazione/100)
-    roi = netto / investimento_totale * 100
-    data.append(["Studenti", anno, netto, roi, valore_immobile])
+# Visualizzazione superficie
+fig = plt.figure(figsize=(10, 7))
+ax = fig.add_subplot(111, projection='3d')
 
-# Scenario Airbnb
-st.header("🛏️ Scenario 2: Affitto breve (Airbnb)")
-
-prezzo_notte = st.number_input("Prezzo medio per notte (€)", value=70, step=5)
-occupazione = st.slider("Occupazione annua (%)", 0, 100, 60)
-
-data_airbnb = []
-valore_immobile = prezzo_casa
-
-for anno in range(1, anni_simulazione + 1):
-    giorni_occupati = 365 * occupazione / 100
-    ricavi = prezzo_notte * giorni_occupati * ((1 + inflazione/100) ** (anno - 1))
-    costi = ricavi * 0.40
-    tasse = (ricavi - costi) * 0.25
-    netto = ricavi - costi - tasse - spese_annue
-    valore_immobile *= (1 + inflazione/100)
-    roi = netto / investimento_totale * 100
-    data_airbnb.append(["Airbnb", anno, netto, roi, valore_immobile])
-
-# DataFrame finale
-df = pd.DataFrame(data + data_airbnb, columns=["Tipo", "Anno", "Reddito Netto", "ROI (%)", "Valore Immobile"])
-pivot = df.pivot(index="Anno", columns="Tipo", values="ROI (%)")
-
-# Grafico ROI
-st.subheader("📊 ROI Annuo Comparato")
-st.line_chart(pivot)
-
-# Esportazione
-st.subheader("📤 Esporta i dati")
-csv = df.to_csv(index=False).encode("utf-8")
-st.download_button("📥 Scarica CSV", csv, "simulazione_roi.csv", "text/csv")
-
-# Tabella finale
-st.subheader("📋 Tabella di sintesi")
-st.dataframe(df[df["Anno"] == anni_simulazione].set_index("Tipo")[["Reddito Netto", "ROI (%)", "Valore Immobile"]])
-'''
-
-# Salvataggio file Streamlit
-file_path = Path("/mnt/data/calcolo_roi_streamlit.py")
-file_path.write_text(streamlit_code)
-
-file_path.name  # To return the filename only for download link
-
+ax.scatter(strike_list, maturity_list, vol_surface, c=vol_surface, cmap='viridis')
+ax.set_title("Superficie di Volatilità Implicita")
+ax.set_xlabel("Strike")
+ax.set_ylabel("Maturity (anni)")
+ax.set_zlabel("Volatilità Implicita")
+st.pyplot(fig)
